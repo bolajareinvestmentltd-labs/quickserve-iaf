@@ -17,26 +17,16 @@ export default function Storefront({ products }: { products: Product[] }) {
   const addItem = useCartStore((state) => state.addItem);
 
   const categories = [
-    { id: 'food', label: 'Food', icon: Pizza, color: 'text-orange-600', bg: 'bg-orange-100', activeBg: 'bg-orange-500', activeText: 'text-white' },
-    { id: 'drink', label: 'Drinks', icon: CupSoda, color: 'text-blue-600', bg: 'bg-blue-100', activeBg: 'bg-blue-500', activeText: 'text-white' },
-    { id: 'eatable', label: 'Eatables', icon: Cookie, color: 'text-amber-600', bg: 'bg-amber-100', activeBg: 'bg-amber-500', activeText: 'text-white' },
+    { id: 'food', label: 'Food', icon: Pizza },
+    { id: 'drink', label: 'Drinks', icon: CupSoda },
+    { id: 'eatable', label: 'Eatables', icon: Cookie },
   ] as const;
 
   const filteredProducts = products.filter((p) => p.category === active);
 
-  const handleAddToCart = (product: Product) => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: Number(product.price),
-      vendorName: product.vendorName,
-    });
-    // Optional: You could trigger a small haptic vibration here for mobile users!
-  };
-
   return (
-    <div className="space-y-6">
-      {/* CATEGORY FILTER */}
+    <div className="space-y-8">
+      {/* Premium Dark Filters */}
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
         {categories.map((cat) => {
           const Icon = cat.icon;
@@ -45,8 +35,10 @@ export default function Storefront({ products }: { products: Product[] }) {
             <button
               key={cat.id}
               onClick={() => setActive(cat.id)}
-              className={`flex-shrink-0 flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all shadow-sm ${
-                isActive ? `${cat.activeBg} ${cat.activeText}` : `${cat.bg} ${cat.color} opacity-80`
+              className={`flex-shrink-0 flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all duration-300 ${
+                isActive 
+                  ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25 border border-transparent" 
+                  : "bg-[#14171F] text-gray-400 border border-white/5 hover:bg-[#1A1D24] hover:text-white"
               }`}
             >
               <Icon className="w-5 h-5" />
@@ -56,36 +48,35 @@ export default function Storefront({ products }: { products: Product[] }) {
         })}
       </div>
 
-      {/* DYNAMIC PRODUCT FEED */}
-      <div>
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Festival Favorites</h2>
-        <div className="grid grid-cols-2 gap-4">
-          {filteredProducts.map((item) => (
-            <div key={item.id} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex flex-col">
-              <div className="h-24 bg-gray-50 rounded-xl flex items-center justify-center text-4xl mb-3">
-                {item.imageUrl}
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-900 leading-tight mb-1 text-sm">{item.name}</h3>
-                <p className="text-xs text-gray-500 mb-2">{item.vendorName}</p>
-              </div>
-              <div className="flex items-center justify-between mt-auto">
-                <span className="font-black text-gray-900 text-sm">₦{Number(item.price).toLocaleString()}</span>
-                <button 
-                  onClick={() => handleAddToCart(item)}
-                  className="bg-black text-white p-1.5 rounded-lg hover:bg-orange-500 transition active:scale-95"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
+      {/* Responsive Product Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+        {filteredProducts.map((item) => (
+          <div key={item.id} className="group bg-[#14171F] rounded-3xl p-4 border border-white/5 flex flex-col hover:border-orange-500/30 transition-all duration-300 shadow-xl">
+            <div className="h-32 md:h-40 bg-[#0A0C10] rounded-2xl flex items-center justify-center text-5xl mb-4 border border-white/5 group-hover:scale-[1.02] transition-transform">
+              {item.imageUrl}
             </div>
-          ))}
-          {filteredProducts.length === 0 && (
-            <div className="col-span-2 text-center py-8 text-gray-500 text-sm">
-              No items available in this category.
+            <div className="flex-1">
+              <h3 className="font-black text-white text-lg leading-tight mb-1">{item.name}</h3>
+              <p className="text-xs text-gray-500 font-bold tracking-wide uppercase mb-4">{item.vendorName}</p>
             </div>
-          )}
-        </div>
+            <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
+              <span className="font-black text-orange-500 text-xl">₦{Number(item.price).toLocaleString()}</span>
+              <button 
+                onClick={() => addItem({ id: item.id, name: item.name, price: Number(item.price), vendorName: item.vendorName })}
+                className="bg-white text-black p-3 rounded-xl hover:bg-orange-500 hover:text-white transition-colors active:scale-95 shadow-lg"
+              >
+                <Plus className="w-5 h-5 font-black" />
+              </button>
+            </div>
+          </div>
+        ))}
+        
+        {filteredProducts.length === 0 && (
+          <div className="col-span-full text-center py-16 bg-[#14171F] rounded-3xl border border-white/5">
+            <div className="text-4xl mb-3 opacity-50">🍽️</div>
+            <p className="text-gray-400 font-bold">This vendor hasn't added items in this category yet.</p>
+          </div>
+        )}
       </div>
     </div>
   );
