@@ -1,4 +1,5 @@
 import { pgTable, serial, text, integer, decimal, timestamp, pgEnum } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 export const categoryEnum = pgEnum('category', ['food', 'drink', 'eatable']);
 export const orderStatusEnum = pgEnum('status', ['pending', 'cooking', 'delivering', 'completed']);
@@ -25,7 +26,7 @@ export const orders = pgTable('orders', {
   customerName: text('customer_name').notNull(),
   customerPhone: text('customer_phone').notNull(),
   deliveryZone: text('delivery_zone').notNull(),
-  ticketId: text('ticket_id'), // NEW: Optional Ticket ID
+  ticketId: text('ticket_id'),
   totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).notNull(),
   status: orderStatusEnum('status').default('pending').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -38,3 +39,31 @@ export const orderItems = pgTable('order_items', {
   quantity: integer('quantity').notNull(),
   subtotal: decimal('subtotal', { precision: 10, scale: 2 }).notNull(),
 });
+
+// --- RELATIONS FOR TYPESCRIPT & DRIZZLE QUERIES ---
+
+export const vendorsRelations = relations(vendors, ({ many }) => ({
+  products: many(products),
+}));
+
+export const productsRelations = relations(products, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [products.vendorId],
+    references: [vendors.id],
+  }),
+}));
+
+export const ordersRelations = relations(orders, ({ many }) => ({
+  items: many(orderItems),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+  product: one(products, {
+    fields: [orderItems.productId],
+    references: [products.id],
+  }),
+}));
