@@ -3,7 +3,8 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import CartDrawer from "@/components/CartDrawer";
 
-const font = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "700", "800", "900"] });
+// FIX: Removed "900" since it maxes out at "800"
+const font = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "700", "800"] });
 
 export const metadata: Metadata = {
   title: "Quickserve | Fast Festival Delivery",
