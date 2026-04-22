@@ -3,7 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import CartDrawer from "@/components/CartDrawer";
 
-// FIX: Removed "900" since it maxes out at "800"
+// Capped the weight at 800 to keep Next.js and Vercel happy
 const font = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "700", "800"] });
 
 export const metadata: Metadata = {
