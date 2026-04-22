@@ -40,30 +40,19 @@ export const orderItems = pgTable('order_items', {
   subtotal: decimal('subtotal', { precision: 10, scale: 2 }).notNull(),
 });
 
-// --- RELATIONS FOR TYPESCRIPT & DRIZZLE QUERIES ---
+// NEW RIDES EXPANSION TABLE
+export const rides = pgTable('rides', {
+  id: serial('id').primaryKey(),
+  driverName: text('driver_name').notNull(),
+  vehicleInfo: text('vehicle_info').notNull(),
+  destination: text('destination').notNull(),
+  departureTime: text('departure_time').notNull(),
+  whatsappNumber: text('whatsapp_number').notNull(),
+  seats: integer('seats').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
 
-export const vendorsRelations = relations(vendors, ({ many }) => ({
-  products: many(products),
-}));
-
-export const productsRelations = relations(products, ({ one }) => ({
-  vendor: one(vendors, {
-    fields: [products.vendorId],
-    references: [vendors.id],
-  }),
-}));
-
-export const ordersRelations = relations(orders, ({ many }) => ({
-  items: many(orderItems),
-}));
-
-export const orderItemsRelations = relations(orderItems, ({ one }) => ({
-  order: one(orders, {
-    fields: [orderItems.orderId],
-    references: [orders.id],
-  }),
-  product: one(products, {
-    fields: [orderItems.productId],
-    references: [products.id],
-  }),
-}));
+export const vendorsRelations = relations(vendors, ({ many }) => ({ products: many(products) }));
+export const productsRelations = relations(products, ({ one }) => ({ vendor: one(vendors, { fields: [products.vendorId], references: [vendors.id] }) }));
+export const ordersRelations = relations(orders, ({ many }) => ({ items: many(orderItems) }));
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({ order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }), product: one(products, { fields: [orderItems.productId], references: [products.id] }) }));
