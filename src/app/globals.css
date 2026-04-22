@@ -2,11 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Force pure dark theme everywhere, overriding any system preferences */
+/* Tell the browser the site is natively dark so it stops auto-inverting colors */
+:root {
+  color-scheme: dark;
+}
+
+/* Force pure dark theme everywhere */
 html, body {
   background-color: #0A0C10 !important;
   color: #f3f4f6 !important;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Fix link default colors just in case the browser tries to force 'visited' purple */
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 /* Hide scrollbars for the horizontal category filters */
