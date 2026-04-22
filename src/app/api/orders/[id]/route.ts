@@ -3,9 +3,12 @@ import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const orderId = parseInt(params.id);
+    // FIX: Await the params promise before reading the ID
+    const resolvedParams = await params;
+    const orderId = parseInt(resolvedParams.id);
+    
     if (isNaN(orderId)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
     const body = await req.json();
