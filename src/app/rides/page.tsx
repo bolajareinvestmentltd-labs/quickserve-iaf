@@ -3,7 +3,7 @@ import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { desc } from 'drizzle-orm';
 import AddRideForm from './AddRideForm';
-import { Users, Clock, MapPin, MessageCircle } from 'lucide-react';
+import { Users, Clock, MapPin, MessageCircle, Car } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
