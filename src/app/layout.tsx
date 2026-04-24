@@ -3,7 +3,6 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import CartDrawer from "@/components/CartDrawer";
 
-// Capped the weight at 800 to keep Next.js and Vercel happy
 const font = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "700", "800"] });
 
 export const metadata: Metadata = {
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${font.className} bg-[#0A0C10] text-gray-100 min-h-screen selection:bg-orange-500 selection:text-white`}>
+      <body className={`${font.className} bg-[#0A0C10] text-gray-100 min-h-screen`}>
         {children}
         <CartDrawer />
       </body>
