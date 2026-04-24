@@ -14,7 +14,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Fix for Chrome Android forced high contrast */
+/* Fix for Chrome Android forced high contrast or dark mode */
 @media (forced-colors: active) {
   * {
     forced-color-adjust: none !important;
