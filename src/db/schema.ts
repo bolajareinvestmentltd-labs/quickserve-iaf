@@ -1,17 +1,18 @@
 import { 
-  pgTable, 
-  text, 
-  varchar, 
-  integer, 
-  boolean, 
-  timestamp, 
-  uuid, 
-  pgEnum 
+  pgTable, text, varchar, integer, boolean, timestamp, uuid, pgEnum 
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-// 🚀 ADDED 'accepted' to status so vendors can acknowledge orders
-export const orderStatusEnum = pgEnum("order_status", ["pending", "accepted", "completed", "cancelled"]);
+export const orderStatusEnum = pgEnum("order_status", [
+  "pending",          // Initial state
+  "paid",             // Paystack successful
+  "accepted",         // Vendor confirmed
+  "preparing",        // Kitchen active
+  "out_for_delivery", // Runner moving
+  "delivered",        // Scanned/Completed
+  "cancelled"
+]);
+
 export const paymentStatusEnum = pgEnum("payment_status", ["pending", "successful", "failed"]);
 
 export const vendors = pgTable("vendors", {
@@ -22,10 +23,7 @@ export const vendors = pgTable("vendors", {
   phone: varchar("phone", { length: 20 }).notNull(),
   paymentStatus: paymentStatusEnum("payment_status").default("pending").notNull(),
   isSlotActive: boolean("is_slot_active").default(false).notNull(),
-  
-  // 💰 THE VIRTUAL WALLET: Tracks earnings (in Kobo/Cents to avoid decimals)
   walletBalance: integer("wallet_balance").default(0).notNull(),
-  
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -47,6 +45,10 @@ export const orders = pgTable("orders", {
   customerZone: text("customer_zone").notNull(),
   totalAmount: integer("total_amount").notNull(),
   status: orderStatusEnum("status").default("pending").notNull(),
+  // 🔐 Delivery Verification Code (Short 4-6 digit string)
+  deliveryCode: varchar("delivery_code", { length: 10 }),
+  rating: integer("rating"),
+  comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -70,11 +72,10 @@ export const rides = pgTable("rides", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// --- RELATIONS ---
-
+// RELATIONS
 export const vendorsRelations = relations(vendors, ({ many }) => ({
   products: many(products),
-  orderItems: many(orderItems), // Allows us to see all orders a vendor has received
+  orderItems: many(orderItems),
 }));
 
 export const productsRelations = relations(products, ({ one }) => ({
