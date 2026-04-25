@@ -1,58 +1,86 @@
-import { pgTable, serial, text, integer, decimal, timestamp, pgEnum } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { 
+  pgTable, 
+  text, 
+  varchar, 
+  integer, 
+  boolean, 
+  timestamp, 
+  uuid, 
+  pgEnum 
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
-export const categoryEnum = pgEnum('category', ['food', 'drink', 'eatable']);
-export const orderStatusEnum = pgEnum('status', ['pending', 'cooking', 'delivering', 'completed']);
+export const orderStatusEnum = pgEnum("order_status", ["pending", "completed", "cancelled"]);
+export const paymentStatusEnum = pgEnum("payment_status", ["pending", "successful", "failed"]);
 
-export const vendors = pgTable('vendors', {
-  id: serial('id').primaryKey(),
-  businessName: text('business_name').notNull(),
-  boothLocation: text('booth_location').notNull(),
-  phone: text('phone').notNull(),
+export const vendors = pgTable("vendors", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  businessName: text("business_name").notNull(),
+  contactPerson: text("contact_person").notNull(),
+  email: text("email").unique().notNull(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  paymentStatus: paymentStatusEnum("payment_status").default("pending").notNull(),
+  isSlotActive: boolean("is_slot_active").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const products = pgTable('products', {
-  id: serial('id').primaryKey(),
-  vendorId: integer('vendor_id').references(() => vendors.id).notNull(),
-  name: text('name').notNull(),
-  description: text('description'),
-  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
-  category: categoryEnum('category').notNull(),
-  imageUrl: text('image_url'),
+export const products = pgTable("products", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  vendorId: uuid("vendor_id").references(() => vendors.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  price: integer("price").notNull(),
+  imageUrl: text("image_url"),
+  isAvailable: boolean("is_available").default(true).notNull(),
+  // 🚀 THE NEW PROMO BADGE FIELD
+  promoBadge: varchar("promo_badge", { length: 50 }), 
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const orders = pgTable('orders', {
-  id: serial('id').primaryKey(),
-  customerName: text('customer_name').notNull(),
-  customerPhone: text('customer_phone').notNull(),
-  deliveryZone: text('delivery_zone').notNull(),
-  ticketId: text('ticket_id'),
-  totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).notNull(),
-  status: orderStatusEnum('status').default('pending').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+export const orders = pgTable("orders", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  customerName: text("customer_name").notNull(),
+  customerPhone: varchar("customer_phone", { length: 20 }).notNull(),
+  customerZone: text("customer_zone").notNull(),
+  totalAmount: integer("total_amount").notNull(),
+  status: orderStatusEnum("status").default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const orderItems = pgTable('order_items', {
-  id: serial('id').primaryKey(),
-  orderId: integer('order_id').references(() => orders.id).notNull(),
-  productId: integer('product_id').references(() => products.id).notNull(),
-  quantity: integer('quantity').notNull(),
-  subtotal: decimal('subtotal', { precision: 10, scale: 2 }).notNull(),
+export const orderItems = pgTable("order_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id").references(() => orders.id, { onDelete: "cascade" }).notNull(),
+  productId: uuid("product_id").references(() => products.id, { onDelete: "cascade" }).notNull(),
+  vendorId: uuid("vendor_id").references(() => vendors.id, { onDelete: "cascade" }).notNull(),
+  quantity: integer("quantity").notNull().default(1),
 });
 
-// NEW RIDES EXPANSION TABLE
-export const rides = pgTable('rides', {
-  id: serial('id').primaryKey(),
-  driverName: text('driver_name').notNull(),
-  vehicleInfo: text('vehicle_info').notNull(),
-  destination: text('destination').notNull(),
-  departureTime: text('departure_time').notNull(),
-  whatsappNumber: text('whatsapp_number').notNull(),
-  seats: integer('seats').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+export const rides = pgTable("rides", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  driverName: text("driver_name").notNull(),
+  whatsappNumber: varchar("whatsapp_number", { length: 20 }).notNull(),
+  carModel: text("car_model").notNull(),
+  totalSeats: integer("total_seats").notNull(),
+  availableSeats: integer("available_seats").notNull(),
+  isFull: boolean("is_full").default(false).notNull(),
+  departureTime: timestamp("departure_time"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const vendorsRelations = relations(vendors, ({ many }) => ({ products: many(products) }));
-export const productsRelations = relations(products, ({ one }) => ({ vendor: one(vendors, { fields: [products.vendorId], references: [vendors.id] }) }));
-export const ordersRelations = relations(orders, ({ many }) => ({ items: many(orderItems) }));
-export const orderItemsRelations = relations(orderItems, ({ one }) => ({ order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }), product: one(products, { fields: [orderItems.productId], references: [products.id] }) }));
+export const vendorsRelations = relations(vendors, ({ many }) => ({
+  products: many(products),
+  orderItems: many(orderItems),
+}));
+
+export const productsRelations = relations(products, ({ one }) => ({
+  vendor: one(vendors, { fields: [products.vendorId], references: [vendors.id] }),
+}));
+
+export const ordersRelations = relations(orders, ({ many }) => ({
+  items: many(orderItems),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }),
+  product: one(products, { fields: [orderItems.productId], references: [products.id] }),
+  vendor: one(vendors, { fields: [orderItems.vendorId], references: [vendors.id] }),
+}));

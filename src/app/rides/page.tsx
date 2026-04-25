@@ -1,69 +1,79 @@
-import Header from '@/components/Header';
-import { db } from '@/db';
-import * as schema from '@/db/schema';
-import { desc } from 'drizzle-orm';
-import AddRideForm from './AddRideForm';
-import { Users, Clock, MapPin, MessageCircle, Car } from 'lucide-react';
+import { db } from "@/db";
+import { rides } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
+import Link from "next/link";
+import { ArrowLeft, Car, MessageCircle, Users, Clock } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
-export default async function RidesPage() {
-  const allRides = await db.query.rides.findMany({
-    orderBy: [desc(schema.rides.createdAt)],
+export default async function RidesBoard() {
+  // Fetch only rides that are not full
+  const activeRides = await db.query.rides.findMany({
+    where: eq(rides.isFull, false),
+    orderBy: [desc(rides.createdAt)],
   });
 
   return (
-    <main className="min-h-screen bg-[#0A0C10] text-gray-100 pb-24">
-      <Header />
-      <div className="container mx-auto px-4 md:px-8 pt-8">
-        <div className="mb-8 text-center md:text-left">
-          <h1 className="text-3xl md:text-5xl font-black text-white mb-2 tracking-tight">
-            Festival <span className="text-orange-500">Carpool.</span>
-          </h1>
-          <p className="text-gray-400 text-lg">Find a ride home or share your empty seats.</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1"><AddRideForm /></div>
-          
-          <div className="lg:col-span-2 space-y-4">
-            {allRides.map((ride) => (
-              <div key={ride.id} className="bg-[#14171F] p-5 rounded-3xl border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-orange-500/20 text-orange-500 px-3 py-1 rounded-full text-xs font-bold border border-orange-500/30 uppercase tracking-widest">
-                      {ride.seats} Seats Left
-                    </span>
-                    <span className="text-gray-500 text-sm font-bold">{ride.vehicleInfo}</span>
-                  </div>
-                  <h3 className="font-black text-2xl text-white mt-2 flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-gray-400" /> {ride.destination}
-                  </h3>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-400 font-medium">
-                    <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {ride.driverName}</span>
-                    <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> Leaving: {ride.departureTime}</span>
-                  </div>
-                </div>
-                
-                <a 
-                  href={`https://wa.me/${ride.whatsappNumber.replace(/\s/g, '')}?text=Hi%20${ride.driverName}!%20I'm%20at%20the%20festival.%20Do%20you%20still%20have%20a%20seat%20going%20to%20${ride.destination}?`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-[#25D366] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#1DA851] transition-all active:scale-95 shadow-lg shadow-green-500/20 whitespace-nowrap"
-                >
-                  <MessageCircle className="w-5 h-5" /> Book Seat
-                </a>
-              </div>
-            ))}
-            {allRides.length === 0 && (
-              <div className="text-center py-16 bg-[#14171F] rounded-3xl border border-white/5">
-                <Car className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-400 font-bold">No rides listed yet. Be the first to offer a seat!</p>
-              </div>
-            )}
-          </div>
+    <div className="flex flex-col min-h-screen bg-neutral-950 pb-20">
+      <div className="sticky top-0 z-50 bg-neutral-950/80 backdrop-blur-md p-4 flex items-center border-b border-neutral-800">
+        <Link href="/" className="p-2 bg-neutral-900 rounded-full text-white active:scale-95 transition-transform">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div className="ml-4">
+          <span className="font-bold text-white block leading-tight">Festival Carpool</span>
+          <span className="text-xs text-neutral-400">Find a ride to/from the event</span>
         </div>
       </div>
-    </main>
+
+      <main className="p-5 flex-1">
+        {activeRides.length === 0 ? (
+          <div className="text-center p-10 bg-neutral-900 border border-neutral-800 border-dashed rounded-3xl mt-4">
+            <Car className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
+            <p className="text-neutral-400">No active rides posted right now. Check back soon!</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {activeRides.map((ride) => {
+              // Format the WhatsApp message dynamically
+              const waMessage = encodeURIComponent(`Hi ${ride.driverName}, I saw your ride on Quickserve for the festival. Do you still have a seat available?`);
+              const waLink = `https://wa.me/${ride.whatsappNumber.replace(/[^0-9]/g, '')}?text=${waMessage}`;
+
+              return (
+                <div key={ride.id} className="bg-neutral-900 border border-neutral-800 p-5 rounded-3xl">
+                  <div className="flex justify-between items-start border-b border-neutral-800 pb-4 mb-4">
+                    <div>
+                      <h3 className="font-black text-white text-xl">{ride.carModel}</h3>
+                      <p className="text-neutral-400 text-sm mt-1 flex items-center gap-1">
+                        Driver: <span className="text-white font-semibold">{ride.driverName}</span>
+                      </p>
+                    </div>
+                    <div className="bg-purple-500/10 text-purple-400 px-3 py-2 rounded-xl flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      <span className="font-black">{ride.availableSeats} / {ride.totalSeats}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-neutral-400 text-sm">
+                      <Clock className="w-4 h-4" />
+                      <span>Ready to leave</span>
+                    </div>
+
+                    <a 
+                      href={waLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 active:scale-95 transition-transform shadow-lg"
+                    >
+                      <MessageCircle className="w-5 h-5" /> DM Driver
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+    </div>
   );
 }

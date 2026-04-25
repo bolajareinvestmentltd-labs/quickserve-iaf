@@ -1,55 +1,95 @@
-import Header from '@/components/Header';
-import Storefront from '@/components/Storefront';
-import { db } from '@/db';
-import * as schema from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { ChevronLeft, Store } from 'lucide-react';
+import { db } from "@/db";
+import { vendors } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { notFound } from "next/navigation";
+import { ArrowLeft, Store, MapPin } from "lucide-react";
+import Link from "next/link";
+import AddToCartBtn from "@/components/AddToCartBtn";
 
 export const dynamic = 'force-dynamic';
 
-export default async function VendorPage({ params }: { params: Promise<{ id: string }> }) {
-  // FIX: Await the params promise here too
-  const resolvedParams = await params;
-  const vendorId = parseInt(resolvedParams.id);
-  
-  if (isNaN(vendorId)) return notFound();
-
-  const vendorData = await db.query.vendors.findFirst({
-    where: eq(schema.vendors.id, vendorId),
+export default async function VendorPage({ params }: { params: { id: string } }) {
+  // Fetch vendor and their available products in one clean query
+  const vendor = await db.query.vendors.findFirst({
+    where: eq(vendors.id, params.id),
+    with: {
+      products: {
+        where: (products, { eq }) => eq(products.isAvailable, true),
+      },
+    },
   });
 
-  if (!vendorData) return notFound();
-
-  const vendorProducts = await db.query.products.findMany({
-    where: eq(schema.products.vendorId, vendorId),
-  });
-
-  const mappedProducts = vendorProducts.map(p => ({
-    ...p,
-    price: p.price.toString(),
-    vendorName: vendorData.businessName
-  }));
+  if (!vendor) {
+    notFound();
+  }
 
   return (
-    <main className="pb-24">
-      <Header />
-      <div className="container mx-auto px-4 md:px-8 pt-6">
-        <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-bold text-sm mb-6 transition-colors">
-          <ChevronLeft className="w-4 h-4" /> Back to Vendors
+    <div className="flex flex-col min-h-screen pb-24 bg-neutral-950">
+      {/* 1. Sticky Header / Nav */}
+      <div className="sticky top-0 z-50 bg-neutral-950/80 backdrop-blur-md p-4 flex items-center border-b border-neutral-800">
+        <Link href="/" className="p-2 bg-neutral-900 rounded-full text-white active:scale-95 transition-transform">
+          <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="bg-[#14171F] border border-white/5 rounded-3xl p-6 md:p-8 mb-8 flex items-center gap-6">
-          <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-2xl flex items-center justify-center">
-             <Store className="w-8 h-8 md:w-10 md:h-10 text-orange-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl md:text-4xl font-black text-white mb-1">{vendorData.businessName}</h1>
-            <p className="text-orange-500 font-bold text-sm tracking-wide uppercase">Zone: {vendorData.boothLocation}</p>
-          </div>
-        </div>
-        <Storefront products={mappedProducts} />
+        <span className="ml-4 font-bold text-white truncate">{vendor.businessName}</span>
       </div>
-    </main>
+
+      {/* 2. Chowdeck-style Hero Section */}
+      <div className="bg-neutral-900 px-5 pt-6 pb-8 border-b border-neutral-800 rounded-b-3xl">
+        <div className="w-16 h-16 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-4">
+          <Store className="w-8 h-8 text-orange-500" />
+        </div>
+        <h1 className="text-3xl font-black text-white">{vendor.businessName}</h1>
+        <div className="flex items-center text-neutral-400 mt-2 text-sm">
+          <MapPin className="w-4 h-4 mr-1" />
+          <span>Ilorin Automotive Festival</span>
+        </div>
+      </div>
+
+      {/* 3. Product Menu List */}
+      <main className="px-5 mt-6 flex-1">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-500 mb-4">
+          Menu ({vendor.products.length})
+        </h2>
+
+        {vendor.products.length === 0 ? (
+          <div className="text-center p-8 bg-neutral-900 border border-neutral-800 border-dashed rounded-2xl">
+            <p className="text-neutral-400 text-sm">This vendor is updating their menu. Check back shortly!</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {vendor.products.map((product) => (
+              <div 
+                key={product.id} 
+                className="bg-neutral-900 border border-neutral-800 p-4 rounded-2xl flex gap-4 items-center"
+              >
+                {/* Image Placeholder - Ready for Cloudinary */}
+                <div className="w-20 h-20 bg-neutral-800 rounded-xl flex-shrink-0 overflow-hidden relative">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="object-cover w-full h-full" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-neutral-600">No Image</div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-white text-lg truncate">{product.name}</h3>
+                  <p className="font-semibold text-orange-500 mt-1">
+                    ₦{(product.price).toLocaleString()}
+                  </p>
+                </div>
+
+                {/* Client Component Button */}
+                <div className="flex-shrink-0">
+                  <AddToCartBtn 
+                    product={{ id: product.id, name: product.name, price: product.price }} 
+                    vendorId={vendor.id} 
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
