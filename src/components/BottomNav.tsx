@@ -2,31 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, ClipboardList, User } from "lucide-react";
+import { Home, Store, ShoppingBag, Shield, Bike } from "lucide-react";
 
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // Don't show this nav if the user is in the admin dashboard
-  if (pathname?.startsWith('/admin')) return null;
-
-  const navItems = [
-    { name: 'Home', icon: Home, href: '/' },
-    { name: 'Search', icon: Search, href: '#' },
-    { name: 'Orders', icon: ClipboardList, href: '/orders' },
-    { name: 'Profile', icon: User, href: '#' },
+  const links = [
+    { href: "/", icon: Home, label: "Home" },
+    { href: "/vendors", icon: Store, label: "Kitchens" },
+    { href: "/admin/inventory", icon: Shield, label: "Admin" },
+    { href: "/admin/runners", icon: Bike, label: "Runners" },
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full max-w-md bg-zinc-950/90 backdrop-blur-md border-t border-zinc-800 flex justify-between px-8 py-3 z-40 rounded-t-3xl">
-      {navItems.map((item) => {
-        const isActive = pathname === item.href;
+    <nav className="fixed bottom-6 left-6 right-6 z-[100] bg-zinc-900/80 backdrop-blur-2xl border border-white/5 p-4 rounded-[2.5rem] flex items-center justify-around shadow-2xl shadow-black/50">
+      {links.map((link) => {
+        const isActive = pathname === link.href;
         return (
-          <Link key={item.name} href={item.href} className="flex flex-col items-center gap-1">
-            <item.icon className={`w-6 h-6 transition-colors ${isActive ? 'text-orange-500' : 'text-zinc-500'}`} />
-            <span className={`text-[10px] font-bold ${isActive ? 'text-orange-500' : 'text-zinc-500'}`}>
-              {item.name}
-            </span>
+          <Link key={link.href} href={link.href} className="flex flex-col items-center gap-1 relative group">
+            <link.icon className={`w-5 h-5 transition-all ${isActive ? 'text-orange-500 scale-110' : 'text-zinc-600 group-active:scale-90'}`} />
+            {isActive && <div className="absolute -bottom-2 w-1 h-1 bg-orange-500 rounded-full" />}
           </Link>
         );
       })}

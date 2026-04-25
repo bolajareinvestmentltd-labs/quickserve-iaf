@@ -1,91 +1,97 @@
+import { db } from "@/db";
+import { vendors } from "@/db/schema";
+import { eq, desc, sql } from "drizzle-orm";
 import Link from "next/link";
-import { 
-  MapPin, Bell, UtensilsCrossed, Car, Shirt, 
-  Wrench, GlassWater, HeartPulse, ChevronRight 
-} from "lucide-react";
+import { Store, ShoppingBag, Utensils, Zap, Star, Search } from "lucide-react";
+import LiveLocation from "@/components/LiveLocation";
 import LiveClock from "@/components/LiveClock";
+import BottomNav from "@/components/BottomNav";
 
-export default function Home() {
-  const categories = [
-    { name: "Food", icon: UtensilsCrossed, color: "from-orange-500/20 to-orange-500/5", border: "border-orange-500/20", text: "text-orange-500", href: "/vendors" },
-    { name: "Rides", icon: Car, color: "from-blue-500/20 to-blue-500/5", border: "border-blue-500/20", text: "text-blue-400", href: "/rides" },
-    { name: "Merch", icon: Shirt, color: "from-purple-500/20 to-purple-500/5", border: "border-purple-500/20", text: "text-purple-400", href: "#" },
-    { name: "Parts", icon: Wrench, color: "from-emerald-500/20 to-emerald-500/5", border: "border-emerald-500/20", text: "text-emerald-400", href: "#" },
-    { name: "Drinks", icon: GlassWater, color: "from-cyan-500/20 to-cyan-500/5", border: "border-cyan-500/20", text: "text-cyan-400", href: "#" },
-    { name: "Safety", icon: HeartPulse, color: "from-red-500/20 to-red-500/5", border: "border-red-500/20", text: "text-red-400", href: "#" },
-  ];
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const activeVendors = await db.query.vendors.findMany({
+    where: eq(vendors.isSlotActive, true),
+    orderBy: [desc(vendors.createdAt)],
+    limit: 6
+  });
 
   return (
-    <div className="flex flex-col gap-8 pt-6">
-      {/* 📍 HEADER (Admin gear removed) */}
-      <header className="px-5 flex justify-between items-center">
-        <div className="bg-zinc-900/50 border border-zinc-800 py-2 px-4 rounded-full flex items-center gap-3 backdrop-blur-md">
-          <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+    <div className="bg-black min-h-screen pb-32">
+      {/* 🔝 TOP BAR */}
+      <header className="p-6 flex flex-col gap-4 bg-zinc-900/20 backdrop-blur-xl sticky top-0 z-50 border-b border-white/5">
+        <div className="flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-[10px] font-black text-zinc-500 uppercase leading-none">Live At</span>
-            <span className="text-xs font-bold text-white flex items-center gap-1">
-              Ilorin Auto Fest <ChevronRight className="w-3 h-3 text-orange-500" />
-            </span>
+            <h1 className="text-2xl font-black text-white italic tracking-tighter leading-none">QUICK<span className="text-orange-500">SERVE</span></h1>
+            <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.3em] mt-1">Auto Fest Edition</p>
           </div>
+          <LiveClock />
         </div>
-        
-        <button className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center relative">
-          <Bell className="w-5 h-5 text-zinc-400" />
-          <span className="absolute top-0 right-0 w-3 h-3 bg-orange-600 rounded-full border-4 border-black" />
-        </button>
+        <LiveLocation />
       </header>
 
-      {/* 🏎️ BRAND TITLE */}
-      <section className="px-6">
-        <h1 className="text-5xl font-black italic tracking-tighter leading-none">
-          QUICK<span className="text-orange-500">SERVE</span>
-        </h1>
-        <p className="text-zinc-500 text-sm mt-2 font-medium tracking-tight">Ilorin Automotive Festival 2026</p>
-      </section>
+      <main className="p-6 flex flex-col gap-8">
+        {/* 🔍 SEARCH BAR */}
+        <div className="relative group">
+          <Search className="absolute left-4 top-4 w-5 h-5 text-zinc-500 group-focus-within:text-orange-500 transition-colors" />
+          <input type="text" placeholder="Search for food, drinks, stalls..." className="w-full bg-zinc-900 border border-zinc-800 p-4 pl-12 rounded-2xl outline-none text-white focus:border-orange-500 transition-all shadow-xl shadow-black" />
+        </div>
 
-      {/* 🧧 THE 5-MINUTE HERO CARD */}
-      <section className="px-5">
-        <div className="bg-gradient-to-br from-orange-600 to-orange-700 p-8 rounded-[2.5rem] relative overflow-hidden shadow-[0_20px_50px_rgba(234,88,12,0.3)]">
-          <div className="relative z-10">
-            <LiveClock />
-            
-            <h2 className="text-3xl font-black text-white mt-4 leading-tight uppercase">
-              Food & <br/>Drinks
-            </h2>
-            <p className="text-white/90 text-sm mt-3 font-bold max-w-[220px] leading-snug">
-              Don't move a muscle. We'll deliver to your spot in <span className="text-black bg-white px-1.5 rounded">5 MINUTES</span> or less.
-            </p>
-            
-            <Link href="/vendors" className="inline-block bg-white text-orange-600 text-[10px] font-black px-6 py-3 rounded-2xl mt-6 uppercase shadow-xl active:scale-95 transition-transform">
-              Order Now
-            </Link>
+        {/* 🥘 CATEGORIES */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest italic">Fast Categories</h3>
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            {[ { n: 'Meals', i: Utensils }, { n: 'Drinks', i: Zap }, { n: 'Stalls', i: Store }, { n: 'Orders', i: ShoppingBag } ].map((cat) => (
+              <Link href={cat.n === 'Stalls' ? '/vendors' : '#'} key={cat.n} className="flex flex-col items-center gap-2 group">
+                <div className="w-full aspect-square bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center group-active:scale-90 transition-transform group-hover:border-orange-500/50">
+                  <cat.i className="w-6 h-6 text-zinc-400 group-hover:text-orange-500 transition-colors" />
+                </div>
+                <span className="text-[10px] font-black text-zinc-500 uppercase">{cat.n}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* 🏪 FEATURED KITCHENS (With Active Status) */}
+        <section className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest italic">Active Kitchens</h3>
+            <Link href="/vendors" className="text-[10px] font-black text-orange-500 uppercase">View All</Link>
           </div>
           
-          {/* Decorative Icon */}
-          <UtensilsCrossed className="absolute -right-6 -bottom-6 w-44 h-44 text-black/10 -rotate-12" />
-        </div>
-      </section>
+          <div className="grid gap-3">
+            {activeVendors.map((v) => {
+              // Online Logic: If lastSeen was in the last 2 minutes
+              const isOnline = v.lastSeen && (new Date().getTime() - new Date(v.lastSeen).getTime() < 120000);
+              
+              return (
+                <Link key={v.id} href={`/vendors/${v.id}`} className="bg-zinc-900 border border-zinc-800 p-4 rounded-[2rem] flex items-center justify-between active:scale-95 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center border border-orange-500/20">
+                        <Store className="w-6 h-6 text-orange-500" />
+                      </div>
+                      <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-zinc-900 ${isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`} />
+                    </div>
+                    <div>
+                      <h4 className="text-white font-bold uppercase italic tracking-tight">{v.businessName}</h4>
+                      <p className="text-[9px] text-zinc-500 font-bold uppercase">Stall {v.stallNumber || 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded-lg">
+                    <Star className="w-2.5 h-2.5 text-orange-500 fill-current" />
+                    <span className="text-[10px] font-black text-white">4.9</span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      </main>
 
-      {/* 📦 SERVICE GRID */}
-      <section className="px-5 pb-10">
-        <div className="flex justify-between items-end mb-6">
-          <h3 className="text-xl font-black text-white">Services</h3>
-          <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Explore All</span>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
-          {categories.map((cat) => (
-            <Link key={cat.name} href={cat.href} className="flex flex-col items-center gap-3 group">
-              <div className={`w-full aspect-square rounded-[2.2rem] flex items-center justify-center bg-gradient-to-b ${cat.color} border ${cat.border} shadow-lg transition-all duration-300 group-active:scale-90`}>
-                <cat.icon className={`w-8 h-8 ${cat.text}`} />
-              </div>
-              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-tighter group-hover:text-white transition-colors">
-                {cat.name}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <BottomNav />
     </div>
   );
 }
