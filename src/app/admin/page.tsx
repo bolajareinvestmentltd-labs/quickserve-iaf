@@ -1,12 +1,11 @@
 import { db } from "@/db";
 import { vendors, orders, rides } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { Activity, TrendingUp, Users, Car as CarIcon } from "lucide-react";
+import { Activity, TrendingUp, Users, Car as CarIcon, ClipboardList } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminHub() {
-  // Fetch high-level statistics
   const [vendorsCount, activeOrders, totalRevenue, totalRides] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(vendors),
     db.select({ count: sql<number>`count(*)` }).from(orders).where(eq(orders.status, "pending")),
@@ -25,7 +24,6 @@ export default async function AdminHub() {
         </p>
       </header>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-3xl">
           <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center mb-3">
