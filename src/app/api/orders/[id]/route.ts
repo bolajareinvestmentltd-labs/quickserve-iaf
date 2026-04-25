@@ -1,25 +1,22 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/db';
-import * as schema from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { db } from "@/db";
+import { orders } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    // FIX: Await the params promise before reading the ID
-    const resolvedParams = await params;
-    const orderId = parseInt(resolvedParams.id);
-    
-    if (isNaN(orderId)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-
     const body = await req.json();
-    
-    await db.update(schema.orders)
+    const orderId = params.id; // Removed Number() conversion because it's a UUID string now
+
+    await db.update(orders)
       .set({ status: body.status })
-      .where(eq(schema.orders.id, orderId));
+      .where(eq(orders.id, orderId));
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to update order:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 }
