@@ -7,14 +7,14 @@ import { Home, Search, ClipboardList, User } from "lucide-react";
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // Hide the consumer nav if we are in the admin dashboard
+  // Don't show this nav if the user is in the admin dashboard
   if (pathname?.startsWith('/admin')) return null;
 
   const navItems = [
     { name: 'Home', icon: Home, href: '/' },
-    { name: 'Search', icon: Search, href: '/search' },
+    { name: 'Search', icon: Search, href: '#' },
     { name: 'Orders', icon: ClipboardList, href: '/orders' },
-    { name: 'Profile', icon: '/profile' }, // We can add this later
+    { name: 'Profile', icon: User, href: '#' },
   ];
 
   return (
