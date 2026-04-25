@@ -1,55 +1,46 @@
 "use client";
 
-import { useState } from "react";
 import { CldUploadWidget } from "next-cloudinary";
-import { Image as ImageIcon, CheckCircle2, UploadCloud } from "lucide-react";
+import { Image as ImageIcon, UploadCloud, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
 
 export default function ImageUpload() {
-  const [imageUrl, setImageUrl] = useState<string>("");
+  const [url, setUrl] = useState("");
 
   return (
-    <>
-      {/* This hidden input silently passes the uploaded URL to the Server Action */}
-      <input type="hidden" name="imageUrl" value={imageUrl} />
-      
-      <CldUploadWidget
-        uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+    <div className="w-full">
+      <CldUploadWidget 
+        uploadPreset="quickserve_preset"
         onSuccess={(result: any) => {
-          // Cloudinary returns the live image URL here
-          setImageUrl(result.info.secure_url);
+          setUrl(result.info.secure_url);
         }}
       >
-        {({ open }) => {
-          function handleOnClick(e: React.MouseEvent) {
-            e.preventDefault(); // Prevents the main form from submitting
-            open();
-          }
-          
-          return (
-            <button
-              onClick={handleOnClick}
-              className={`w-full p-4 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all active:scale-95 ${
-                imageUrl 
-                  ? "border-green-500/50 bg-green-500/10 text-green-500" 
-                  : "border-neutral-700 bg-neutral-800 text-neutral-400 hover:border-orange-500 hover:text-orange-500"
-              }`}
-            >
-              {imageUrl ? (
-                <>
-                  <CheckCircle2 className="w-6 h-6" />
-                  <span className="font-bold text-sm">Image Uploaded Successfully!</span>
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="w-6 h-6" />
-                  <span className="font-bold text-sm">Tap to Upload Photo</span>
-                  <span className="text-xs opacity-70">Opens camera or gallery</span>
-                </>
-              )}
-            </button>
-          );
-        }}
+        {({ open }) => (
+          <div 
+            onClick={() => open()}
+            className={`group relative w-full h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all ${
+              url 
+                ? 'border-green-500/50 bg-green-500/5' 
+                : 'border-zinc-800 bg-black hover:border-orange-500/50'
+            }`}
+          >
+            {url ? (
+              <>
+                <img src={url} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-40" />
+                <CheckCircle2 className="w-8 h-8 text-green-500 relative z-10" />
+                <span className="text-[10px] font-black text-green-500 uppercase mt-2 relative z-10">Image Ready</span>
+                {/* Hidden input to pass the URL to the server action */}
+                <input type="hidden" name="imageUrl" value={url} />
+              </>
+            ) : (
+              <>
+                <UploadCloud className="w-8 h-8 text-zinc-700 group-hover:text-orange-500 transition-colors" />
+                <span className="text-[10px] font-black text-zinc-500 uppercase mt-2 tracking-widest">Upload Food Photo</span>
+              </>
+            )}
+          </div>
+        )}
       </CldUploadWidget>
-    </>
+    </div>
   );
 }
