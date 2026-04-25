@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import FloatingCart from "@/components/FloatingCart";
+import BottomNav from "@/components/BottomNav";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,7 +16,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Quickserve | Ilorin Automotive Festival",
-  description: "Order food and find rides instantly.",
+  description: "The official IAF food & logistics hub.",
 };
 
 export default function RootLayout({
@@ -26,10 +27,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className} bg-black text-white antialiased`}>
-        <main className="mx-auto max-w-md min-h-screen bg-neutral-950 relative shadow-2xl">
+        {/* Main App Container: Max width for mobile feel on all devices */}
+        <main className="mx-auto max-w-md min-h-screen bg-black relative shadow-2xl pb-24">
           {children}
-          {/* The cart is injected here so it overlays all pages seamlessly */}
+          
+          {/* Persistent App UI */}
           <FloatingCart />
+          <BottomNav />
         </main>
       </body>
     </html>
