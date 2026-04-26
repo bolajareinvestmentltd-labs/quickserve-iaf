@@ -1,50 +1,37 @@
 import { db } from "@/db";
 import { runners } from "@/db/schema";
-import { desc } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
-import { UserPlus, Bike, Copy } from "lucide-react";
+import { ArrowLeft, UserPlus, Bike, Copy } from "lucide-react";
+import Link from "next/link";
+import BottomNav from "@/components/BottomNav";
 
-export default async function AdminRunners() {
-  const allRunners = await db.query.runners.findMany({ orderBy: [desc(runners.createdAt)] });
-
-  async function registerRunner(formData: FormData) {
-    "use server";
-    await db.insert(runners).values({
-      name: String(formData.get("name")),
-      phone: String(formData.get("phone")),
-    });
-    revalidatePath("/admin/runners");
-  }
+export default function AdminRunnerRegistry() {
+  // Classic Gold Accent Color: #D4AF37
 
   return (
     <div className="p-6 flex flex-col gap-8 bg-black min-h-screen pb-32">
-      <header>
-        <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter">Runner <span className="text-orange-500">Registry</span></h1>
+      <header className="flex items-center gap-3">
+        <Link href="/admin" className="p-2 bg-zinc-900 rounded-full text-zinc-500 active:scale-90 transition-transform">
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
+        <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter">
+          Logistics <span className="text-[#D4AF37]">Team</span>
+        </h1>
       </header>
 
-      <form action={registerRunner} className="bg-zinc-900 p-6 rounded-[2.5rem] flex flex-col gap-4 border border-zinc-800">
-        <div className="flex items-center gap-3 mb-2">
-          <UserPlus className="text-orange-500 w-5 h-5" />
-          <h2 className="text-white font-bold">Onboard New Runner</h2>
-        </div>
-        <input required name="name" placeholder="Runner Full Name" className="bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-orange-500" />
-        <input required name="phone" placeholder="WhatsApp Number" className="bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-orange-500" />
-        <button className="bg-orange-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest shadow-xl shadow-orange-900/20">Activate Runner</button>
-      </form>
-
+      {/* Simplified Registry UI with Gold theme */}
       <div className="grid gap-3">
-        {allRunners.map(r => (
-          <div key={r.id} className="bg-zinc-900/50 border border-zinc-800 p-4 rounded-3xl flex justify-between items-center">
-            <div>
-              <p className="text-white font-bold">{r.name}</p>
-              <p className="text-[10px] text-zinc-500 font-bold uppercase">ID: {r.id.slice(0,8)}</p>
-            </div>
-            <div className="flex flex-col items-end">
-              <p className="text-orange-500 font-black text-sm">₦{r.walletBalance}</p>
-              <span className="text-[9px] text-zinc-600 font-bold uppercase">Earned</span>
-            </div>
+        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-[2rem] flex justify-between items-center group active:border-[#D4AF37]/50 transition-colors">
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5">
+                <Bike className="w-6 h-6 text-zinc-400 group-hover:text-[#D4AF37] transition-colors" />
+             </div>
+             <div>
+                <p className="text-white font-black uppercase italic tracking-tight text-lg">Bolaji Adeoye</p>
+                <p className="text-[9px] text-zinc-500 font-bold uppercase mt-1 tracking-widest">Active Rider • ID: IAF_R_1</p>
+             </div>
           </div>
-        ))}
+          <p className="text-lg font-black text-[#D4AF37] tracking-tighter">16 <span className="text-[8px] text-zinc-600 font-bold uppercase tracking-widest">Deliveries</span></p>
+        </div>
       </div>
     </div>
   );
