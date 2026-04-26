@@ -15,6 +15,7 @@ export const vendors = pgTable("vendors", {
   password: text("password").notNull(),
   isSlotActive: boolean("is_slot_active").default(false).notNull(),
   walletBalance: integer("wallet_balance").default(0).notNull(),
+  totalDeliveries: integer("total_deliveries").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -41,6 +42,7 @@ export const runners = pgTable("runners", {
   pin: varchar("pin", { length: 4 }).default("6675"),
   isOnline: boolean("is_online").default(false).notNull(),
   walletBalance: integer("wallet_balance").default(0).notNull(),
+  totalDeliveries: integer("total_deliveries").default(0).notNull(),
 });
 
 export const orders = pgTable("orders", {
