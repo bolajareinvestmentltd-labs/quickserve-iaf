@@ -2,7 +2,6 @@ import { db } from "@/db";
 import { vendors, products } from "@/db/schema";
 import Link from "next/link";
 import { MapPin, Utensils, Store, Pill, Package, ShoppingBasket, Sparkles } from "lucide-react";
-import BottomNav from "@/components/BottomNav";
 
 export default async function HomePage() {
   const allVendors = await db.query.vendors.findMany();
@@ -86,7 +85,6 @@ export default async function HomePage() {
         </div>
       </div>
       
-      <BottomNav />
     </div>
   );
 }
