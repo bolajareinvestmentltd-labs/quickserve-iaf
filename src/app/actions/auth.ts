@@ -1,52 +1,38 @@
 "use server";
-
 import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { vendors } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-// Temporary in-memory store for OTPs (In production, use Redis)
-const otpStore = new Map<string, { otp: string; expires: number }>();
+// 1. ADMIN LOGIN (Uses Environment Variables)
+export async function adminLogin(formData: FormData) {
+  const username = formData.get("username");
+  const password = formData.get("password");
 
-export async function sendOtp(email: string) {
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const expires = Date.now() + 5 * 60 * 1000; // 5 minutes
-
-  otpStore.set(email, { otp, expires });
-
-  // 📧 INTEGRATION POINT: This is where you'd call your email API
-  console.log(`[AUTH] OTP for ${email}: ${otp}`); 
+  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+    const cookieStore = await cookies();
+    cookieStore.set("admin_session", "active", { path: "/" });
+    redirect("/admin");
+  }
   
-  return { success: true };
+  throw new Error("Invalid Admin Credentials");
 }
 
-export async function verifyOtp(email: string, enteredOtp: string) {
-  const record = otpStore.get(email);
+// 2. VENDOR LOGIN (Uses Database)
+export async function vendorLogin(formData: FormData) {
+  const username = String(formData.get("username"));
+  const password = String(formData.get("password"));
 
-  if (!record || record.expires < Date.now()) {
-    return { success: false, message: "OTP expired or not found" };
+  const vendor = await db.query.vendors.findFirst({
+    where: and(eq(vendors.username, username), eq(vendors.password, password)),
+  });
+
+  if (vendor) {
+    const cookieStore = await cookies();
+    cookieStore.set("vendor_session", vendor.id, { path: "/" });
+    redirect("/vendor/dashboard");
   }
-
-  if (record.otp !== enteredOtp) {
-    return { success: false, message: "Invalid OTP" };
-  }
-
-  // OTP is correct - clear it
-  otpStore.delete(email);
-
-  // Check if user exists, if not, create them
-  let user = await db.query.users.findFirst({ where: eq(users.email, email) });
-
-  if (!user) {
-    [user] = await db.insert(users).values({
-      email,
-      isVerified: true,
-      walletBalance: 0,
-      cashbackBalance: 0,
-    }).returning();
-  } else if (!user.isVerified) {
-    await db.update(users).set({ isVerified: true }).where(eq(users.id, user.id));
-  }
-
-  return { success: true, userId: user.id };
+  
+  throw new Error("Invalid Vendor Credentials");
 }
