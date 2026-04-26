@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Home, Search, ShoppingBag, User } from "lucide-react";
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
 
-  // Show nav only on consumer paths
   const showNav = ["/", "/search", "/orders", "/vendors"].some(p => pathname === p || pathname.startsWith(p)) 
     && !pathname.includes('/admin') 
     && !pathname.includes('/dashboard');
@@ -31,7 +31,7 @@ export default function BottomNav() {
         <span className="text-[8px] font-black uppercase tracking-widest">Orders</span>
       </Link>
 
-      <button onClick={() => alert("Profile & Settings coming in the next update!")} className="flex flex-col items-center gap-1 text-zinc-500 active:scale-90 transition-transform">
+      <button onClick={() => router.push("/auth")} className="flex flex-col items-center gap-1 text-zinc-500 active:scale-90 transition-transform">
         <User className="w-5 h-5" />
         <span className="text-[8px] font-black uppercase tracking-widest">Profile</span>
       </button>

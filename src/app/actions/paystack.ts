@@ -9,6 +9,7 @@ export async function initializePayment(data: {
   customerName: string;
   customerPhone: string;
   customerZone: string;
+  userId?: string;
   items: any[];
 }) {
   const secretKey = process.env.PAYSTACK_SECRET_KEY;
