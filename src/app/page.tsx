@@ -45,10 +45,10 @@ export default async function HomePage() {
             { icon: ShoppingBasket, name: "Markets", color: "text-green-400" },
             { icon: Sparkles, name: "More", color: "text-pink-400" },
           ].map((item) => (
-            <div key={item.name} onClick={() => alert("Coming Soon after Auto Fest!")} className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-95 transition-transform opacity-70 cursor-pointer">
+            <Link href="#" key={item.name} className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-95 transition-transform opacity-70">
               <item.icon className={`w-8 h-8 ${item.color}`} />
               <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{item.name}</span>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
@@ -74,7 +74,7 @@ export default async function HomePage() {
         <div className="flex overflow-x-auto gap-4 px-6 pb-8 scrollbar-hide">
           {allProducts.map((p) => (
             <div key={p.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 w-60 flex-shrink-0 flex flex-col gap-3">
-              <div className="w-full h-32 bg-black rounded-2xl border border-zinc-800 flex items-center justify-center">
+              <div className="w-full h-32 bg-black rounded-2xl border border-zinc-800 flex items-center justify-center overflow-hidden">
                 <Utensils className="w-8 h-8 text-zinc-700" />
               </div>
               <div>
