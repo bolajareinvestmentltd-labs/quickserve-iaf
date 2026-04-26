@@ -1,10 +1,21 @@
-import { Store, ShoppingBag, Utensils, Zap, Star, MapPin } from "lucide-react";
+import { db } from "@/db";
+import { vendors } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
+import { Store, ShoppingBag, Utensils, Zap, MapPin } from "lucide-react";
+import Link from "next/link";
 import LiveClock from "@/components/LiveClock";
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  // Fetch REAL active vendors from your database
+  const activeVendors = await db.query.vendors.findMany({
+    where: eq(vendors.isSlotActive, true),
+    orderBy: [desc(vendors.createdAt)],
+  });
+
   return (
     <div className="p-6 flex flex-col gap-8 bg-black min-h-screen pb-32">
-      {/* TOP HEADER */}
       <header className="flex flex-col gap-3 sticky top-0 bg-black/80 backdrop-blur-md py-4 z-50">
         <div className="flex items-center justify-between">
           <div>
@@ -19,45 +30,49 @@ export default function Home() {
         </div>
       </header>
 
-      {/* MEALS CATS (Unchanged) */}
       <section className="grid grid-cols-4 gap-3">
         {[
-          { name: 'Meals', icon: Utensils },
-          { name: 'Drinks', icon: Zap },
-          { name: 'Stalls', icon: Store },
-          { name: 'My Orders', icon: ShoppingBag },
+          { name: 'Meals', icon: Utensils, link: '#' },
+          { name: 'Drinks', icon: Zap, link: '#' },
+          { name: 'Stalls', icon: Store, link: '/vendors' },
+          { name: 'Orders', icon: ShoppingBag, link: '/orders' },
         ].map((cat) => (
-          <div key={cat.name} className="flex flex-col items-center gap-2 group active:scale-95 transition-transform">
+          <Link href={cat.link} key={cat.name} className="flex flex-col items-center gap-2 group active:scale-95 transition-transform">
             <div className="w-full aspect-square bg-zinc-900 border border-zinc-800 rounded-3xl flex items-center justify-center border border-dashed border-zinc-700/50 group-active:border-orange-500">
               <cat.icon className="w-6 h-6 text-zinc-600 group-active:text-orange-500" />
             </div>
             <span className="text-[10px] font-black text-zinc-500 uppercase group-active:text-white">{cat.name}</span>
-          </div>
+          </Link>
         ))}
       </section>
 
-      {/* ACTIVE KITCHENS FEED (New Production Design) */}
       <section className="flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-black text-white italic uppercase tracking-tight">Active <span className="text-orange-500">Kitchens</span></h3>
-          <span className="text-xs font-bold text-zinc-600 uppercase">View All</span>
+          <Link href="/vendors" className="text-xs font-bold text-zinc-600 uppercase">View All</Link>
         </div>
 
         <div className="grid gap-3">
-          <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-[2.5rem] flex flex-col gap-4 active:scale-95 transition-transform">
-             <div className="flex items-center gap-4">
-                <img src="https://res.cloudinary.com/din74ljlu/image/upload/v1713915157/Mama_s_Kitchen_logo_ej6vxj.jpg" className="w-14 h-14 rounded-2xl object-cover" />
-                <div>
-                   <h4 className="text-white font-bold uppercase italic tracking-tight text-lg">Mama's Kitchen</h4>
-                   <p className="text-[10px] text-zinc-500 font-bold uppercase mt-1 tracking-widest">Stall 2 • Jollof & Grill Specialists</p>
-                </div>
-             </div>
-             <div className="flex gap-2">
-                {['Party Jollof', 'Suya Skewer', 'Plantain'].map(tag => (
-                   <span key={tag} className="text-[9px] text-zinc-400 font-bold bg-white/5 px-2 py-1 rounded-full uppercase tracking-widest border border-white/5">{tag}</span>
-                ))}
-             </div>
-          </div>
+          {activeVendors.length === 0 ? (
+            <div className="text-center py-10 border border-dashed border-zinc-800 rounded-3xl">
+              <Store className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+              <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">No Kitchens Live Yet</p>
+            </div>
+          ) : (
+            activeVendors.map((v) => (
+              <Link href={`/vendors/${v.id}`} key={v.id} className="bg-zinc-900 border border-zinc-800 p-5 rounded-[2.5rem] flex flex-col gap-4 active:scale-95 transition-transform">
+                 <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20">
+                      <Store className="w-6 h-6 text-orange-500" />
+                    </div>
+                    <div>
+                       <h4 className="text-white font-bold uppercase italic tracking-tight text-lg">{v.businessName}</h4>
+                       <p className="text-[10px] text-zinc-500 font-bold uppercase mt-1 tracking-widest">Stall {v.stallNumber || 'TBD'} • {v.contactPerson}</p>
+                    </div>
+                 </div>
+              </Link>
+            ))
+          )}
         </div>
       </section>
     </div>
