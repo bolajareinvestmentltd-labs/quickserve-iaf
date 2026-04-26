@@ -1,5 +1,6 @@
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import FloatingCart from "@/components/FloatingCart";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,7 +10,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Constrained mobile shell with a subtle glow */}
           <main className="w-full max-w-md bg-black relative shadow-[0_0_50px_rgba(0,0,0,0.5)] min-h-screen flex flex-col">
             <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
-              {children}
+              <FloatingCart />
+        {children}
             </div>
             <BottomNav />
           </main>

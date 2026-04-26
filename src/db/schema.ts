@@ -35,6 +35,7 @@ export const products = pgTable("products", {
   imageUrl: text("image_url"),
   isAvailable: boolean("is_available").default(true).notNull(),
   // 🚀 RE-ADDED PROMO BADGE
+  category: varchar("category", { length: 50 }).default("meals"),
   promoBadge: varchar("promo_badge", { length: 50 }), 
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
