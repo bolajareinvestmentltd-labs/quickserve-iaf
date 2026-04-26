@@ -1,99 +1,92 @@
 import { db } from "@/db";
-import { orders, runners, vendors } from "@/db/schema";
+import { orders } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { ArrowLeft, Package, Bike, ChefHat, CheckCircle2, MapPin, ShieldCheck } from "lucide-react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Clock, Bike, CheckCircle2 } from "lucide-react";
+import dynamic from 'next/dynamic';
 
-export const dynamic = 'force-dynamic';
+// Dynamic import for react-qr-code to prevent SSR issues
+const QRCode = dynamic(() => import('react-qr-code'), { ssr: false });
 
-export default async function TrackOrderPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrderTrackerPage({ params }: { params: Promise<{ id: string }> }) {
+  // 1. Next.js 16 requires us to await params
   const { id } = await params;
+  
   const order = await db.query.orders.findFirst({
     where: eq(orders.id, id),
-    with: { runner: true, items: { with: { vendor: true } } }
   });
 
   if (!order) notFound();
 
-  const statuses = [
-    { id: 'paid', label: 'Payment Confirmed', icon: ShieldCheck },
-    { id: 'accepted', label: 'Runner Assigned', icon: Bike },
-    { id: 'preparing', label: 'Kitchen Preparing', icon: ChefHat },
-    { id: 'out_for_delivery', label: 'Out for Delivery', icon: MapPin },
-    { id: 'delivered', label: 'Enjoy your Meal', icon: CheckCircle2 },
+  // Generate the absolute tracking URL
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://quickserve-iaf.vercel.app";
+  const trackingUrl = `${baseUrl}/orders/${order.id}/track`;
+
+  // 2. Added `|| ""` fallback so TS stops complaining about nulls
+  const steps = [
+    { name: "Payment Confirmed", icon: CheckCircle2, status: order.status !== "pending" ? "completed" : "pending" },
+    { name: "Kitchen Preparing", icon: Clock, status: ["preparing", "out_for_delivery", "delivered"].includes(order.status || "") ? "completed" : "pending" },
+    { name: "Runner Assigned", icon: Bike, status: order.runnerId ? "completed" : "pending" },
+    { name: "Out for Delivery", icon: Bike, status: order.status === "out_for_delivery" || order.status === "delivered" ? "completed" : "pending" },
+    { name: "Enjoy Your Meal", icon: CheckCircle2, status: order.status === "delivered" ? "completed" : "pending" },
   ];
 
-  const currentIdx = statuses.findIndex(s => s.id === order.status);
-
   return (
-    <div className="p-6 bg-black min-h-screen pb-32 text-white">
+    <div className="p-6 bg-black min-h-screen text-white pb-32">
       <header className="flex items-center justify-between mb-8">
-        <Link href="/orders" className="p-2 bg-zinc-900 rounded-full text-zinc-500 active:scale-90 transition-transform">
+        <Link href="/" className="p-2 bg-zinc-900 rounded-full text-zinc-500 hover:text-white">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="text-right">
-          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Order ID</p>
-          <p className="text-xs font-bold text-white uppercase">{id.slice(0, 8)}</p>
-        </div>
+        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Live Order Tracker</p>
       </header>
 
-      {/* 🎫 SECURITY CODE CARD */}
-      <div className="bg-orange-600 p-6 rounded-[2.5rem] mb-8 shadow-xl shadow-orange-900/20 flex flex-col items-center text-center">
-        <p className="text-white/60 text-[10px] font-black uppercase tracking-widest mb-1">Delivery Security Code</p>
-        <h2 className="text-5xl font-black text-white italic tracking-tighter">
-          {order.deliveryCode || "----"}
-        </h2>
-        <p className="text-white/80 text-[9px] font-bold uppercase mt-3 leading-tight">
-          Show this code to the runner <br /> to receive your order
+      {/* 🧾 QR CODE & SECURITY CODE CHECKLIST CARD */}
+      <div className="bg-orange-600 p-6 rounded-3xl mb-10 flex flex-col items-center gap-6 shadow-lg shadow-orange-900/20">
+        <h2 className="text-[10px] font-black text-white/70 uppercase tracking-widest">Delivery Checklist 📝</h2>
+        
+        {/* THE REAL-TIME QR CODE (Scannable tracking link) */}
+        <div className="bg-white p-3 rounded-2xl shadow-xl shadow-orange-950/30">
+          <QRCode value={trackingUrl} size={150} />
+        </div>
+        
+        <p className="text-zinc-100 text-xs text-center font-bold px-4 leading-tight">
+          Show this QR code to the Runner. If camera fails, provide the fallback code:
         </p>
+        
+        {/* FALLBACK NUMERIC CODE */}
+        <div className="flex gap-2">
+          {order.deliveryCode?.split('').map((char, i) => (
+            <div key={i} className="w-12 h-16 bg-white rounded-xl flex items-center justify-center font-black text-4xl text-orange-600 shadow-xl shadow-orange-950/20">
+              {char}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* 🚦 LIVE PROGRESS TRACKER */}
-      <div className="flex flex-col gap-8 relative before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-800">
-        {statuses.map((step, idx) => {
-          const isDone = idx <= currentIdx;
-          const isCurrent = idx === currentIdx;
-
-          return (
-            <div key={step.id} className="flex gap-4 items-start relative z-10">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                isDone ? 'bg-orange-600 border-orange-500 scale-110 shadow-lg shadow-orange-900/40' : 'bg-zinc-900 border-zinc-800 text-zinc-700'
+      <div className="relative pl-10 border-l border-zinc-900 ml-3">
+        {steps.map((step, index) => (
+          <div key={step.name} className={`mb-12 relative flex items-start ${step.status === "completed" ? "opacity-100" : "opacity-40"}`}>
+            <div className={`absolute -left-16 p-3 rounded-full border shadow-xl ${
+              step.status === "completed" 
+                ? 'bg-zinc-900 text-orange-500 border-zinc-800' 
+                : 'bg-zinc-950 text-zinc-600 border-zinc-900'
+            }`}>
+              <step.icon className="w-6 h-6" />
+            </div>
+            <div className="pt-2">
+              <p className={`font-black italic uppercase text-lg ${
+                step.status === "completed" ? "text-white" : "text-zinc-600"
               }`}>
-                <step.icon className={`w-5 h-5 ${isDone ? 'text-white' : 'text-zinc-700'}`} />
-              </div>
-              <div className="flex flex-col pt-1">
-                <p className={`text-xs font-black uppercase tracking-widest ${isDone ? 'text-white' : 'text-zinc-600'}`}>
-                  {step.label}
-                </p>
-                {isCurrent && (
-                  <span className="text-[10px] text-orange-500 font-bold uppercase animate-pulse mt-0.5 italic">
-                    In Progress...
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* 🏇 RUNNER INFO CARD */}
-      {order.runner && (
-        <div className="mt-12 bg-zinc-900 border border-zinc-800 p-5 rounded-[2.5rem] flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center">
-              <Bike className="text-orange-500 w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">Your Runner</p>
-              <h4 className="text-white font-black text-lg uppercase italic">{order.runner.name}</h4>
+                {step.name}
+              </p>
+              <p className="text-xs text-zinc-500 font-bold mt-1 tracking-widest uppercase">
+                {step.status === "completed" ? "Completed" : "Waiting"}
+              </p>
             </div>
           </div>
-          <a href={`tel:${order.runner.phone}`} className="bg-white text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">
-            Call
-          </a>
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 }

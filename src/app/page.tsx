@@ -1,7 +1,8 @@
 import { db } from "@/db";
 import { vendors, products } from "@/db/schema";
 import Link from "next/link";
-import { MapPin, Utensils, Store, Pill, Package, ShoppingBasket, Sparkles } from "lucide-react";
+import { Utensils, Store, Pill, Package, ShoppingBasket, Sparkles } from "lucide-react";
+import DynamicHeader from "@/components/DynamicHeader";
 
 export default async function HomePage() {
   const allVendors = await db.query.vendors.findMany();
@@ -9,28 +10,23 @@ export default async function HomePage() {
 
   return (
     <div className="bg-black min-h-screen text-white pb-32">
-      {/* 1. TOP HEADER */}
-      <header className="px-6 pt-10 pb-4 flex justify-between items-center bg-black sticky top-0 z-40">
-        <div className="flex items-center gap-2 bg-zinc-900/50 px-4 py-2 rounded-full border border-zinc-800">
-          <MapPin className="w-4 h-4 text-orange-500" />
-          <span className="text-sm font-bold">Auto Fest '26 Zone</span>
-        </div>
-      </header>
+      {/* 1. TOP DYNAMIC HEADER */}
+      <DynamicHeader />
 
-      {/* 2. HERO BANNER */}
-      <div className="px-6 mb-8 mt-2">
-        <div className="bg-gradient-to-r from-orange-900 to-black border border-orange-600/30 rounded-3xl p-6 relative overflow-hidden">
+      {/* 2. CATCHY PROMO BANNER */}
+      <div className="px-6 mb-8 mt-6">
+        <div className="bg-gradient-to-r from-orange-900 to-black border border-orange-600/30 rounded-3xl p-6 relative overflow-hidden shadow-lg shadow-orange-950/20">
           <div className="relative z-10 w-2/3">
-            <h2 className="text-2xl font-black italic uppercase tracking-tighter leading-tight mb-2">Get the Fest Combo now</h2>
+            <h2 className="text-2xl font-black italic uppercase tracking-tighter leading-tight mb-2">Get your cravings in <span className="text-orange-500">less than 5 minutes</span></h2>
             <div className="inline-block bg-orange-500 text-black font-black px-3 py-1 text-sm rounded-lg border border-orange-400">
-              ₦2,500 Only
+              Auto Fest Combo ₦2,500
             </div>
           </div>
           <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-orange-600/20 blur-3xl rounded-full"></div>
         </div>
       </div>
 
-      {/* 3. THE VISION GRID */}
+      {/* 3. THE VISION GRID (Vision remains closed loop for now) */}
       <div className="px-6 mb-10">
         <div className="grid grid-cols-3 gap-3">
           <Link href="#explore" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-95 transition-transform">
@@ -52,13 +48,13 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* 4. EXPLORE (Circular Vendors) */}
+      {/* 4. EXPLORE (Circular Vendors - Automatic) */}
       <div id="explore" className="mb-10">
-        <h3 className="px-6 text-xl font-black tracking-tighter mb-4">Explore</h3>
+        <h3 className="px-6 text-xl font-black tracking-tighter mb-4 text-white/90">Explore <span className="text-orange-500">Live</span> Kitchens</h3>
         <div className="flex overflow-x-auto gap-6 px-6 pb-4 scrollbar-hide">
           {allVendors.map((v) => (
             <Link href={`/vendors/${v.id}`} key={v.id} className="flex flex-col items-center gap-2 w-20 flex-shrink-0 active:scale-95 transition-transform">
-              <div className="w-16 h-16 bg-zinc-900 rounded-full border-2 border-zinc-800 flex items-center justify-center overflow-hidden shadow-lg">
+              <div className="w-16 h-16 bg-zinc-900 rounded-full border-2 border-zinc-800 flex items-center justify-center overflow-hidden shadow-lg shadow-black/50">
                 {v.logoUrl ? <img src={v.logoUrl} alt={v.businessName} className="w-full h-full object-cover" /> : <Store className="w-6 h-6 text-zinc-500" />}
               </div>
               <span className="text-[10px] font-bold text-center leading-tight text-zinc-400 line-clamp-2">{v.businessName}</span>
@@ -67,12 +63,12 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* 5. FEATURED (Product Cards) */}
+      {/* 5. FEATURED (Product Cards - Automatic) */}
       <div>
-        <h3 className="px-6 text-xl font-black tracking-tighter mb-4 flex items-center gap-2">Featured 🌟</h3>
+        <h3 className="px-6 text-xl font-black tracking-tighter mb-4 flex items-center gap-2 text-white/90">Trending Plates 🌟</h3>
         <div className="flex overflow-x-auto gap-4 px-6 pb-8 scrollbar-hide">
           {allProducts.map((p) => (
-            <div key={p.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 w-60 flex-shrink-0 flex flex-col gap-3">
+            <div key={p.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 w-60 flex-shrink-0 flex flex-col gap-3 transition-transform active:scale-95">
               <div className="w-full h-32 bg-black rounded-2xl border border-zinc-800 flex items-center justify-center overflow-hidden">
                 <Utensils className="w-8 h-8 text-zinc-700" />
               </div>
@@ -84,7 +80,6 @@ export default async function HomePage() {
           ))}
         </div>
       </div>
-      
     </div>
   );
 }
