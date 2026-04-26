@@ -7,13 +7,13 @@ export const paymentStatusEnum = pgEnum("payment_status", ["pending", "successfu
 export const vendors = pgTable("vendors", {
   id: uuid("id").defaultRandom().primaryKey(),
   businessName: text("business_name").notNull(),
-  stallNumber: varchar("stall_number", { length: 10 }), // Added Stall Number
+  stallNumber: varchar("stall_number", { length: 10 }),
   contactPerson: text("contact_person").notNull(),
   email: text("email").unique().notNull(),
   phone: varchar("phone", { length: 20 }).notNull(),
   isSlotActive: boolean("is_slot_active").default(false).notNull(),
   walletBalance: integer("wallet_balance").default(0).notNull(),
-  lastSeen: timestamp("last_seen").defaultNow(), // For Online Status
+  lastSeen: timestamp("last_seen").defaultNow(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -23,7 +23,7 @@ export const runners = pgTable("runners", {
   phone: varchar("phone", { length: 20 }).notNull(),
   walletBalance: integer("wallet_balance").default(0).notNull(),
   totalDeliveries: integer("total_deliveries").default(0).notNull(),
-  lastSeen: timestamp("last_seen").defaultNow(), // For Online Status
+  lastSeen: timestamp("last_seen").defaultNow(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -34,6 +34,8 @@ export const products = pgTable("products", {
   price: integer("price").notNull(),
   imageUrl: text("image_url"),
   isAvailable: boolean("is_available").default(true).notNull(),
+  // 🚀 RE-ADDED PROMO BADGE
+  promoBadge: varchar("promo_badge", { length: 50 }), 
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -59,5 +61,6 @@ export const orderItems = pgTable("order_items", {
 
 export const vendorsRelations = relations(vendors, ({ many }) => ({ products: many(products), orderItems: many(orderItems) }));
 export const runnersRelations = relations(runners, ({ many }) => ({ orders: many(orders) }));
+export const productsRelations = relations(products, ({ one }) => ({ vendor: one(vendors, { fields: [products.vendorId], references: [vendors.id] }) }));
 export const ordersRelations = relations(orders, ({ one, many }) => ({ items: many(orderItems), runner: one(runners, { fields: [orders.runnerId], references: [runners.id] }) }));
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({ order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }), product: one(products, { fields: [orderItems.productId], references: [products.id] }), vendor: one(vendors, { fields: [orderItems.vendorId], references: [vendors.id] }) }));
