@@ -30,7 +30,7 @@ export default async function VendorDashboard({ params }: { params: Promise<{ id
         <h1 className="text-3xl font-black italic uppercase tracking-tighter">
           {vendor?.businessName} <span className="text-orange-500">Hub</span>
         </h1>
-        <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Stall: {vendor?.stallNumber}</p>
+        <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Stall: {vendor?.vendorDisplayId}</p>
       </header>
 
       {/* ➕ ADD PRODUCT FORM */}

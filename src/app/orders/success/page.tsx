@@ -25,7 +25,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
         <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-2">Order <span className="text-green-500">Paid!</span></h1>
         
         {/* THE GUEST UPSELL */}
-        {!order.userId && (
+        {!false && (
           <div className="my-8 p-6 bg-zinc-900 rounded-[2.5rem] border border-orange-500/30 flex flex-col items-center">
             <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4 animate-bounce">
               <Gift className="text-white w-6 h-6" />

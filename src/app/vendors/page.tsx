@@ -34,7 +34,7 @@ export default async function VendorsPage() {
                   <div>
                     <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">{v.businessName}</h3>
                     <p className="text-[10px] text-zinc-500 font-bold uppercase mt-1 flex items-center gap-1">
-                       <ShieldCheck className="w-3 h-3 text-orange-500" /> Stall {v.stallNumber || '00'} • {v.contactPerson}
+                       <ShieldCheck className="w-3 h-3 text-orange-500" /> Stall {v.vendorDisplayId || '00'} • {v.username}
                     </p>
                   </div>
                 </div>

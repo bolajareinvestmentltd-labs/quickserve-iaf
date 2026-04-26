@@ -64,7 +64,7 @@ export default async function Home() {
                     </div>
                     <div>
                        <h4 className="text-white font-bold uppercase italic tracking-tight text-lg">{v.businessName}</h4>
-                       <p className="text-[10px] text-zinc-500 font-bold uppercase mt-1 tracking-widest">Stall {v.stallNumber || 'TBD'} • {v.contactPerson}</p>
+                       <p className="text-[10px] text-zinc-500 font-bold uppercase mt-1 tracking-widest">Stall {v.vendorDisplayId || 'TBD'} • {v.username}</p>
                     </div>
                  </div>
               </Link>

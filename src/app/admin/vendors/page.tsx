@@ -11,10 +11,8 @@ export default async function VendorManagement() {
     "use server";
     await db.insert(vendors).values({
       businessName: String(formData.get("businessName")),
-      contactPerson: String(formData.get("contactPerson")),
-      email: String(formData.get("email")),
-      phone: String(formData.get("phone")),
       username: String(formData.get("username")),
+      email: String(formData.get("email")),
       password: String(formData.get("password")),
     });
     revalidatePath("/admin/vendors");

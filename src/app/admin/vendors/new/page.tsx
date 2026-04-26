@@ -9,11 +9,11 @@ export default function NewVendor() {
   async function createVendor(formData: FormData) {
     "use server";
     await db.insert(vendors).values({
+      password: String(formData.get("password") || "AutoFest2026*"),
       businessName: String(formData.get("businessName")),
-      stallNumber: String(formData.get("stallNumber")),
-      contactPerson: String(formData.get("contactPerson")),
+      vendorDisplayId: String(formData.get("vendorDisplayId")),
+      username: String(formData.get("username")),
       email: String(formData.get("email")),
-      phone: String(formData.get("phone")),
     });
     revalidatePath("/admin/vendors");
     redirect("/admin/vendors");
@@ -37,8 +37,8 @@ export default function NewVendor() {
         <input name="businessName" placeholder="Business Name (e.g. Mama's Kitchen)" required className="bg-black text-white placeholder-zinc-600 border border-zinc-800 p-4 rounded-2xl outline-none focus:border-[#D4AF37] transition-colors" />
         
         <div className="grid grid-cols-2 gap-4">
-          <input name="stallNumber" placeholder="Stall No." required className="bg-black text-white placeholder-zinc-600 border border-zinc-800 p-4 rounded-2xl outline-none focus:border-[#D4AF37] transition-colors" />
-          <input name="contactPerson" placeholder="Manager Name" required className="bg-black text-white placeholder-zinc-600 border border-zinc-800 p-4 rounded-2xl outline-none focus:border-[#D4AF37] transition-colors" />
+          <input name="vendorDisplayId" placeholder="Stall No." required className="bg-black text-white placeholder-zinc-600 border border-zinc-800 p-4 rounded-2xl outline-none focus:border-[#D4AF37] transition-colors" />
+          <input name="username" placeholder="Manager Name" required className="bg-black text-white placeholder-zinc-600 border border-zinc-800 p-4 rounded-2xl outline-none focus:border-[#D4AF37] transition-colors" />
         </div>
 
         <input name="phone" type="tel" placeholder="WhatsApp Number" required className="bg-black text-white placeholder-zinc-600 border border-zinc-800 p-4 rounded-2xl outline-none focus:border-[#D4AF37] transition-colors" />
