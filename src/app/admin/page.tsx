@@ -1,68 +1,59 @@
 import { db } from "@/db";
-import { vendors, orders, rides } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
-import { Activity, TrendingUp, Users, Car as CarIcon, ClipboardList } from "lucide-react";
+import { vendors, orders, runners } from "@/db/schema";
+import { eq, sql, desc } from "drizzle-orm";
+import { Activity, TrendingUp, Users, Bike, ShoppingBag, Store } from "lucide-react";
+import Link from "next/link";
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminHub() {
-  const [vendorsCount, activeOrders, totalRevenue, totalRides] = await Promise.all([
-    db.select({ count: sql<number>`count(*)` }).from(vendors),
-    db.select({ count: sql<number>`count(*)` }).from(orders).where(eq(orders.status, "pending")),
-    db.select({ sum: sql<number>`sum(${orders.totalAmount})` }).from(orders),
-    db.select({ count: sql<number>`count(*)` }).from(rides).where(eq(rides.isFull, false)),
-  ]);
+export default async function AdminDashboard() {
+  const stats = await db.select({
+    totalRevenue: sql<number>`sum(${orders.totalAmount})`,
+    orderCount: sql<number>`count(${orders.id})`,
+  }).from(orders).where(eq(orders.status, 'delivered'));
 
-  const revenue = totalRevenue[0]?.sum || 0;
+  const activeVendors = await db.select({ count: sql<number>`count(${vendors.id})` }).from(vendors);
+  const activeRunners = await db.select({ count: sql<number>`count(${runners.id})` }).from(runners);
+
+  const cards = [
+    { label: "Total Revenue", value: `₦${(stats[0]?.totalRevenue || 0).toLocaleString()}`, icon: TrendingUp, color: "text-green-500" },
+    { label: "Delivered", value: stats[0]?.orderCount || 0, icon: ShoppingBag, color: "text-orange-500" },
+    { label: "Kitchens", value: activeVendors[0]?.count || 0, icon: Store, color: "text-blue-500" },
+    { label: "Runners", value: activeRunners[0]?.count || 0, icon: Bike, color: "text-purple-500" },
+  ];
 
   return (
-    <div className="p-5">
-      <header className="mb-8 mt-4">
-        <h1 className="text-3xl font-black text-white">Command Center</h1>
-        <p className="text-neutral-400 text-sm mt-1 flex items-center gap-2">
-          <Activity className="w-4 h-4 text-green-500 animate-pulse" /> Live Festival Data
-        </p>
+    <div className="p-6 flex flex-col gap-8 bg-black min-h-screen pb-32">
+      <header>
+        <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter">Command <span className="text-orange-500">Center</span></h1>
+        <p className="text-zinc-500 text-sm font-bold">Ilorin Auto Fest Logistics Overview</p>
       </header>
 
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-3xl">
-          <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center mb-3">
-            <TrendingUp className="w-5 h-5 text-green-500" />
+      <div className="grid grid-cols-2 gap-4">
+        {cards.map((card, i) => (
+          <div key={i} className="bg-zinc-900 border border-zinc-800 p-5 rounded-[2rem] flex flex-col gap-2">
+            <card.icon className={`w-5 h-5 ${card.color}`} />
+            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{card.label}</p>
+            <p className="text-xl font-black text-white">{card.value}</p>
           </div>
-          <p className="text-neutral-400 text-xs font-bold uppercase tracking-wider">Gross Value</p>
-          <p className="text-white text-xl font-black mt-1">₦{revenue.toLocaleString()}</p>
-        </div>
-
-        <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-3xl">
-          <div className="w-10 h-10 bg-orange-500/10 rounded-full flex items-center justify-center mb-3">
-            <ClipboardList className="w-5 h-5 text-orange-500" />
-          </div>
-          <p className="text-neutral-400 text-xs font-bold uppercase tracking-wider">Live Orders</p>
-          <p className="text-white text-xl font-black mt-1">{activeOrders[0]?.count || 0}</p>
-        </div>
-
-        <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-3xl">
-          <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center mb-3">
-            <Users className="w-5 h-5 text-blue-500" />
-          </div>
-          <p className="text-neutral-400 text-xs font-bold uppercase tracking-wider">Vendors</p>
-          <p className="text-white text-xl font-black mt-1">{vendorsCount[0]?.count || 0}</p>
-        </div>
-
-        <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-3xl">
-          <div className="w-10 h-10 bg-purple-500/10 rounded-full flex items-center justify-center mb-3">
-            <CarIcon className="w-5 h-5 text-purple-500" />
-          </div>
-          <p className="text-neutral-400 text-xs font-bold uppercase tracking-wider">Active Rides</p>
-          <p className="text-white text-xl font-black mt-1">{totalRides[0]?.count || 0}</p>
-        </div>
+        ))}
       </div>
 
-      <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-3xl flex items-center gap-4">
-        <div className="flex-1">
-          <h3 className="text-white font-bold">Need to onboard a vendor?</h3>
-          <p className="text-neutral-400 text-xs mt-1">Use the Vendors tab to create their profile and generate their unique URL.</p>
-        </div>
+      <div className="grid gap-3">
+        <Link href="/admin/vendors" className="bg-zinc-900 p-6 rounded-[2rem] border border-zinc-800 flex justify-between items-center group active:scale-95 transition-all">
+          <div className="flex items-center gap-4">
+            <Store className="text-orange-500" />
+            <span className="text-white font-bold uppercase italic">Manage Kitchens</span>
+          </div>
+          <Activity className="text-zinc-700 group-hover:text-orange-500 transition-colors" />
+        </Link>
+        <Link href="/admin/runners" className="bg-zinc-900 p-6 rounded-[2rem] border border-zinc-800 flex justify-between items-center group active:scale-95 transition-all">
+          <div className="flex items-center gap-4">
+            <Bike className="text-orange-500" />
+            <span className="text-white font-bold uppercase italic">Logistics Team</span>
+          </div>
+          <Activity className="text-zinc-700 group-hover:text-orange-500 transition-colors" />
+        </Link>
       </div>
     </div>
   );
