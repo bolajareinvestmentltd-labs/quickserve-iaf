@@ -1,67 +1,62 @@
 import { db } from "@/db";
 import { vendors } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
-import Link from "next/link";
 import { revalidatePath } from "next/cache";
-import { ArrowLeft, Plus, Store, CheckCircle2, XCircle, Link as LinkIcon } from "lucide-react";
+import { Plus, Store, Key, User, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
-export const dynamic = 'force-dynamic';
+export default async function VendorManagement() {
+  const allVendors = await db.query.vendors.findMany();
 
-export default async function AdminVendors() {
-  const allVendors = await db.query.vendors.findMany({ orderBy: [desc(vendors.createdAt)] });
-
-  async function toggleActive(formData: FormData) {
+  async function createVendor(formData: FormData) {
     "use server";
-    const id = String(formData.get("id"));
-    const currentStatus = formData.get("currentStatus") === "true";
-    await db.update(vendors).set({ isSlotActive: !currentStatus }).where(eq(vendors.id, id));
+    await db.insert(vendors).values({
+      businessName: String(formData.get("businessName")),
+      contactPerson: String(formData.get("contactPerson")),
+      email: String(formData.get("email")),
+      phone: String(formData.get("phone")),
+      username: String(formData.get("username")),
+      password: String(formData.get("password")),
+    });
     revalidatePath("/admin/vendors");
-    revalidatePath("/");
   }
 
   return (
     <div className="p-6 bg-black min-h-screen text-white pb-32">
-      <header className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-3">
-          <Link href="/admin" className="p-2 bg-zinc-900 rounded-full text-zinc-500 active:scale-90 transition-transform"><ArrowLeft className="w-4 h-4" /></Link>
-          <h1 className="text-2xl font-black italic uppercase tracking-tighter">Manage <span className="text-[#D4AF37]">Kitchens</span></h1>
-        </div>
-        <Link href="/admin/vendors/new" className="bg-[#D4AF37] text-black p-2 rounded-xl font-black active:scale-90 transition-transform"><Plus className="w-6 h-6" /></Link>
+      <header className="flex items-center gap-4 mb-8">
+        <Link href="/admin" className="p-2 bg-zinc-900 rounded-full text-zinc-500"><ArrowLeft className="w-5 h-5" /></Link>
+        <h1 className="text-2xl font-black italic uppercase tracking-tighter">Vendor <span className="text-[#D4AF37]">Registry</span></h1>
       </header>
 
-      <div className="grid gap-4">
-        {allVendors.length === 0 ? (
-          <p className="text-zinc-600 text-center text-xs font-bold uppercase mt-10">No Vendors Registered</p>
-        ) : (
-          allVendors.map(v => (
-            <div key={v.id} className="p-5 bg-zinc-900 border border-zinc-800 rounded-[2rem] flex flex-col gap-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-black text-lg uppercase italic">{v.businessName}</h3>
-                  <p className="text-[10px] text-zinc-400 font-bold uppercase mt-1">Stall {v.stallNumber} • {v.phone}</p>
-                </div>
-                
-                {/* ACTIVE TOGGLE BUTTON */}
-                <form action={toggleActive}>
-                  <input type="hidden" name="id" value={v.id} />
-                  <input type="hidden" name="currentStatus" value={String(v.isSlotActive)} />
-                  <button type="submit" className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1 border ${v.isSlotActive ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}>
-                    {v.isSlotActive ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                    {v.isSlotActive ? 'Live' : 'Hidden'}
-                  </button>
-                </form>
-              </div>
+      {/* CREATE VENDOR FORM */}
+      <form action={createVendor} className="bg-zinc-900 p-6 rounded-[2.5rem] border border-zinc-800 mb-10 flex flex-col gap-3">
+        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-2 mb-2 text-center">Onboard New Kitchen</p>
+        <input name="businessName" placeholder="Business Name (e.g. Jollof Hub)" required className="bg-black p-4 rounded-xl border border-zinc-800 outline-none focus:border-[#D4AF37]" />
+        <div className="grid grid-cols-2 gap-2">
+          <input name="username" placeholder="Login Username" required className="bg-black p-4 rounded-xl border border-zinc-800 outline-none focus:border-[#D4AF37]" />
+          <input name="password" placeholder="Login Password" required className="bg-black p-4 rounded-xl border border-zinc-800 outline-none focus:border-[#D4AF37]" />
+        </div>
+        <input name="email" type="email" placeholder="Contact Email" required className="bg-black p-4 rounded-xl border border-zinc-800 outline-none focus:border-[#D4AF37]" />
+        <button className="bg-[#D4AF37] text-black font-black py-5 rounded-2xl mt-2 uppercase tracking-widest">Register Vendor</button>
+      </form>
 
-              {/* DASHBOARD LINK FOR ADMIN TO COPY */}
-              <div className="bg-black p-3 rounded-xl border border-zinc-800 flex items-center justify-between gap-2">
-                <span className="text-[9px] text-zinc-500 truncate select-all flex-1">/vendor/dashboard/{v.id}</span>
-                <Link href={`/vendor/dashboard/${v.id}`} className="bg-[#D4AF37] text-black px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1 active:scale-95 transition-transform">
-                  <LinkIcon className="w-3 h-3" /> Visit
-                </Link>
+      {/* VENDOR LIST */}
+      <div className="grid gap-3">
+        {allVendors.map((v) => (
+          <div key={v.id} className="bg-zinc-900 border border-zinc-800 p-5 rounded-[2rem] flex justify-between items-center group">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5">
+                <Store className="text-[#D4AF37] w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black uppercase italic text-sm">{v.businessName}</h4>
+                <p className="text-[9px] text-zinc-500 font-bold uppercase mt-1">User: {v.username} • PIN: {v.password}</p>
               </div>
             </div>
-          ))
-        )}
+            <Link href={`/admin/vendors/${v.id}/products`} className="p-3 bg-white/5 rounded-xl text-zinc-500 hover:text-white">
+              <Plus className="w-4 h-4" />
+            </Link>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,49 +1,74 @@
-import { ArrowLeft, PackageSearch, Bike, Activity, TrendingUp } from "lucide-react";
+import { db } from "@/db";
+import { orders, products, vendors } from "@/db/schema";
+import { count, eq } from "drizzle-orm";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { LayoutGrid, ShoppingBag, Users, Zap, ArrowRight, Store, Bike, ClipboardList } from "lucide-react";
 import Link from "next/link";
 
-export default function AdminCommandCenter() {
-  const cards = [
-    { label: "Master Inventory", href: "/admin/inventory", icon: PackageSearch, color: "text-amber-400" },
-    { label: "Rider Logistics Team", href: "/admin/runners", icon: Bike, color: "text-sky-400" },
-    { label: "Real-Time Orders", href: "/admin/orders", icon: Activity, color: "text-orange-500" },
+export default async function AdminHub() {
+  const cookieStore = await cookies();
+  if (!cookieStore.get("admin_session")) redirect("/admin/login");
+
+  // Fetch REAL counts from DB
+  const [orderCount] = await db.select({ value: count() }).from(orders);
+  const [productCount] = await db.select({ value: count() }).from(products);
+  const [vendorCount] = await db.select({ value: count() }).from(vendors);
+
+  const stats = [
+    { label: "Total Orders", value: orderCount.value, icon: Zap, color: "text-green-500", bg: "bg-green-500/10" },
+    { label: "Live Products", value: productCount.value, icon: ShoppingBag, color: "text-[#D4AF37]", bg: "bg-[#D4AF37]/10" },
   ];
 
   return (
-    <div className="p-6 flex flex-col gap-8 bg-black min-h-screen pb-32">
-      <header className="flex items-center gap-3">
-        <Link href="/" className="p-2 bg-zinc-900 rounded-full text-zinc-500 active:scale-90 transition-transform">
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
-        <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter">Command <span className="text-amber-400">Center</span></h1>
+    <div className="p-6 bg-black min-h-screen text-white pb-32">
+      <header className="mb-10">
+        <h1 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-2">Operations</h1>
+        <h2 className="text-4xl font-black italic uppercase tracking-tighter italic">Command <span className="text-[#D4AF37]">Center</span></h2>
       </header>
 
-      {/* 📊 MINI-STATS ROW (Placeholder) */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-[2rem]">
-          <TrendingUp className="w-5 h-5 text-green-500 mb-2" />
-          <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Total Delivered</p>
-          <p className="text-xl font-black text-white">128 <span className="text-[10px] text-green-500">Orders</span></p>
-        </div>
-        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-[2rem]">
-          <PackageSearch className="w-5 h-5 text-zinc-600 mb-2" />
-          <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Live Products</p>
-          <p className="text-xl font-black text-white">64 <span className="text-[10px] text-zinc-600">Items</span></p>
-        </div>
+      {/* REAL STAT CARDS */}
+      <div className="grid grid-cols-2 gap-4 mb-8">
+        {stats.map((s, i) => (
+          <div key={i} className="bg-zinc-900 border border-zinc-800 p-6 rounded-[2.5rem]">
+            <s.icon className={`${s.color} w-5 h-5 mb-4`} />
+            <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">{s.label}</p>
+            <p className="text-3xl font-black italic mt-2">{s.value}</p>
+          </div>
+        ))}
       </div>
 
-      {/* 🛠️ OPERATIONS GRID */}
-      <div className="grid gap-3">
-        {cards.map((card, i) => (
-          <Link key={i} href={card.href} className="group bg-zinc-900 p-6 rounded-[2.5rem] border border-zinc-800 flex justify-between items-center active:scale-95 transition-all">
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center ${card.color}`}>
-                <card.icon className="w-6 h-6" />
-              </div>
-              <p className="text-lg font-bold text-white uppercase italic tracking-tight">{card.label}</p>
+      {/* NAVIGATION PANEL */}
+      <div className="flex flex-col gap-3">
+        <Link href="/admin/vendors" className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem] flex items-center justify-between group">
+          <div className="flex items-center gap-5">
+            <div className="bg-white/5 p-4 rounded-3xl group-hover:bg-[#D4AF37]/20 transition-colors">
+              <Store className="text-[#D4AF37] w-6 h-6" />
             </div>
-            <ArrowLeft className="w-4 h-4 text-zinc-700 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
-          </Link>
-        ))}
+            <h3 className="text-xl font-black uppercase italic tracking-tighter">Master Inventory</h3>
+          </div>
+          <ArrowRight className="text-zinc-700 w-5 h-5" />
+        </Link>
+
+        <Link href="/admin/compliance" className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem] flex items-center justify-between group">
+          <div className="flex items-center gap-5">
+            <div className="bg-white/5 p-4 rounded-3xl group-hover:bg-blue-500/20 transition-colors">
+              <Bike className="text-blue-500 w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-black uppercase italic tracking-tighter">Rider Logistics</h3>
+          </div>
+          <ArrowRight className="text-zinc-700 w-5 h-5" />
+        </Link>
+
+        <Link href="/admin/orders" className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem] flex items-center justify-between group">
+          <div className="flex items-center gap-5">
+            <div className="bg-white/5 p-4 rounded-3xl group-hover:bg-orange-500/20 transition-colors">
+              <ClipboardList className="text-orange-500 w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-black uppercase italic tracking-tighter">Real-Time Orders</h3>
+          </div>
+          <ArrowRight className="text-zinc-700 w-5 h-5" />
+        </Link>
       </div>
     </div>
   );
