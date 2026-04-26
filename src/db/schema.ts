@@ -16,6 +16,7 @@ export const vendors = pgTable("vendors", {
   isSlotActive: boolean("is_slot_active").default(false).notNull(),
   walletBalance: integer("wallet_balance").default(0).notNull(),
   totalDeliveries: integer("total_deliveries").default(0).notNull(),
+  lastSeen: timestamp("last_seen").defaultNow(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -43,6 +44,7 @@ export const runners = pgTable("runners", {
   isOnline: boolean("is_online").default(false).notNull(),
   walletBalance: integer("wallet_balance").default(0).notNull(),
   totalDeliveries: integer("total_deliveries").default(0).notNull(),
+  lastSeen: timestamp("last_seen").defaultNow(),
 });
 
 export const orders = pgTable("orders", {
