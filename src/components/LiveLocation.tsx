@@ -1,33 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin, Navigation } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 export default function LiveLocation() {
   const [address, setAddress] = useState("Locating...");
+  const [coords, setCoords] = useState<{lat: number, lon: number} | null>(null);
 
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(async (position) => {
         const { latitude, longitude } = position.coords;
+        setCoords({ lat: latitude, lon: longitude });
         try {
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           const data = await res.json();
-          // Extract specific parts or full address
-          setAddress(data.display_name.split(',')[0] + ", " + data.address.city);
+          // Extract a clean, readable portion of the address
+          const area = data.address.suburb || data.address.neighbourhood || data.address.road || "Unknown Area";
+          const city = data.address.city || data.address.town || data.address.state || "";
+          setAddress(`${area}, ${city}`);
         } catch (e) {
-          setAddress("Ilorin Auto Fest");
+          setAddress("GPS Active - Tap for Map");
         }
+      }, () => {
+        setAddress("Location Access Denied");
       });
+    } else {
+      setAddress("Geolocation not supported");
     }
   }, []);
 
+  const mapLink = coords ? `https://maps.google.com/?q=${coords.lat},${coords.lon}` : "#";
+
   return (
-    <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-2xl">
-      <Navigation className="w-3 h-3 text-orange-500 fill-current animate-pulse" />
-      <span className="text-[10px] font-black text-white uppercase tracking-widest truncate max-w-[150px]">
-        {address}
-      </span>
-    </div>
+    <a href={mapLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-zinc-400 text-[11px] font-bold uppercase tracking-wide active:scale-95 transition-transform bg-white/5 px-3 py-1.5 rounded-full w-fit">
+      <MapPin className="w-3.5 h-3.5 text-orange-500" />
+      <span className="truncate max-w-[220px]">{address}</span>
+    </a>
   );
 }

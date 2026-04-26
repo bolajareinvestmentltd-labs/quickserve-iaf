@@ -1,14 +1,14 @@
 import { db } from "@/db";
 import { vendors } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { Store, ShoppingBag, Utensils, Zap, MapPin } from "lucide-react";
+import { Store, ShoppingBag, Utensils, Zap } from "lucide-react";
 import Link from "next/link";
 import LiveClock from "@/components/LiveClock";
+import LiveLocation from "@/components/LiveLocation";
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  // Fetch REAL active vendors from your database
   const activeVendors = await db.query.vendors.findMany({
     where: eq(vendors.isSlotActive, true),
     orderBy: [desc(vendors.createdAt)],
@@ -24,10 +24,7 @@ export default async function Home() {
           </div>
           <LiveClock />
         </div>
-        <div className="flex items-center gap-2 text-zinc-500 text-[11px] font-bold uppercase tracking-wide">
-           <MapPin className="w-3.5 h-3.5" />
-           <span>Ilorin Bowl, Main Arena Zone</span>
-        </div>
+        <LiveLocation />
       </header>
 
       <section className="grid grid-cols-4 gap-3">
@@ -38,7 +35,7 @@ export default async function Home() {
           { name: 'Orders', icon: ShoppingBag, link: '/orders' },
         ].map((cat) => (
           <Link href={cat.link} key={cat.name} className="flex flex-col items-center gap-2 group active:scale-95 transition-transform">
-            <div className="w-full aspect-square bg-zinc-900 border border-zinc-800 rounded-3xl flex items-center justify-center border border-dashed border-zinc-700/50 group-active:border-orange-500">
+            <div className="w-full aspect-square bg-zinc-900 border border-zinc-800 rounded-3xl flex items-center justify-center group-active:border-orange-500">
               <cat.icon className="w-6 h-6 text-zinc-600 group-active:text-orange-500" />
             </div>
             <span className="text-[10px] font-black text-zinc-500 uppercase group-active:text-white">{cat.name}</span>
