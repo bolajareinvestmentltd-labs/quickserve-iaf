@@ -1,40 +1,41 @@
 "use client";
-
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Home, Search, ShoppingBag, User } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Home, Search, ShoppingBag, MessageSquare, Smile } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
+  const cartStore = useCart() as any;
+  const cart = cartStore.items || cartStore.cart || [];
+  const cartCount = cart.reduce((acc: any, item: any) => acc + item.quantity, 0);
 
-  const showNav = ["/", "/search", "/orders", "/vendors"].some(p => pathname === p || pathname.startsWith(p)) 
-    && !pathname.includes('/admin') 
-    && !pathname.includes('/dashboard');
-
-  if (!showNav) return null;
+  const navItems = [
+    { name: "Home", icon: Home, path: "/" },
+    { name: "Search", icon: Search, path: "/search" },
+    { name: "Orders", icon: ShoppingBag, path: "/checkout", badge: cartCount },
+    { name: "Support", icon: MessageSquare, path: "/support" },
+    { name: "Profile", icon: Smile, path: "/profile" },
+  ];
 
   return (
-    <nav className="fixed bottom-6 left-6 right-6 z-[100] bg-zinc-900/90 backdrop-blur-3xl border border-white/5 p-4 rounded-[2.5rem] flex items-center justify-between px-8 shadow-2xl shadow-black/50">
-      <Link href="/" className={`flex flex-col items-center gap-1 ${pathname === '/' ? 'text-orange-500' : 'text-zinc-500'}`}>
-        <Home className="w-5 h-5" />
-        <span className="text-[8px] font-black uppercase tracking-widest">Home</span>
-      </Link>
-      
-      <Link href="/search" className={`flex flex-col items-center gap-1 ${pathname === '/search' ? 'text-orange-500' : 'text-zinc-500'}`}>
-        <Search className="w-5 h-5" />
-        <span className="text-[8px] font-black uppercase tracking-widest">Search</span>
-      </Link>
-
-      <Link href="/orders" className={`flex flex-col items-center gap-1 ${pathname === '/orders' ? 'text-orange-500' : 'text-zinc-500'}`}>
-        <ShoppingBag className="w-5 h-5" />
-        <span className="text-[8px] font-black uppercase tracking-widest">Orders</span>
-      </Link>
-
-      <button onClick={() => router.push("/auth")} className="flex flex-col items-center gap-1 text-zinc-500 active:scale-90 transition-transform">
-        <User className="w-5 h-5" />
-        <span className="text-[8px] font-black uppercase tracking-widest">Profile</span>
-      </button>
-    </nav>
+    <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-md border-t border-zinc-900 px-6 py-4 flex justify-between items-center z-50 pb-safe">
+      {navItems.map((item) => {
+        const isActive = pathname === item.path;
+        return (
+          <Link href={item.path} key={item.name} className="relative flex flex-col items-center gap-1 group">
+            <div className={`p-2 rounded-xl transition-all ${isActive ? 'text-orange-500' : 'text-zinc-500 group-hover:text-zinc-300'}`}>
+              <item.icon className={`w-6 h-6 ${isActive ? 'fill-orange-500/20' : ''}`} />
+              {item.badge > 0 && (
+                <span className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-black">
+                  {item.badge}
+                </span>
+              )}
+            </div>
+            <span className={`text-[9px] font-bold ${isActive ? 'text-orange-500' : 'text-zinc-600'}`}>{item.name}</span>
+          </Link>
+        );
+      })}
+    </div>
   );
 }

@@ -1,77 +1,92 @@
 import { db } from "@/db";
-import { vendors } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
-import { Store, ShoppingBag, Utensils, Zap } from "lucide-react";
+import { vendors, products } from "@/db/schema";
 import Link from "next/link";
-import LiveClock from "@/components/LiveClock";
-import LiveLocation from "@/components/LiveLocation";
+import { MapPin, Utensils, Store, Pill, Package, ShoppingBasket, Sparkles } from "lucide-react";
+import BottomNav from "@/components/BottomNav";
 
-export const dynamic = 'force-dynamic';
-
-export default async function Home() {
-  const activeVendors = await db.query.vendors.findMany({
-    where: eq(vendors.isSlotActive, true),
-    orderBy: [desc(vendors.createdAt)],
-  });
+export default async function HomePage() {
+  const allVendors = await db.query.vendors.findMany();
+  const allProducts = await db.query.products.findMany({ limit: 6 });
 
   return (
-    <div className="p-6 flex flex-col gap-8 bg-black min-h-screen pb-32">
-      <header className="flex flex-col gap-3 sticky top-0 bg-black/80 backdrop-blur-md py-4 z-50">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black text-white italic tracking-tighter">QUICK<span className="text-orange-500">SERVE</span></h1>
-            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">Ilorin Auto Fest Edition</p>
-          </div>
-          <LiveClock />
+    <div className="bg-black min-h-screen text-white pb-32">
+      {/* 1. TOP HEADER */}
+      <header className="px-6 pt-10 pb-4 flex justify-between items-center bg-black sticky top-0 z-40">
+        <div className="flex items-center gap-2 bg-zinc-900/50 px-4 py-2 rounded-full border border-zinc-800">
+          <MapPin className="w-4 h-4 text-orange-500" />
+          <span className="text-sm font-bold">Auto Fest '26 Zone</span>
         </div>
-        <LiveLocation />
       </header>
 
-      <section className="grid grid-cols-4 gap-3">
-        {[
-          { name: 'Meals', icon: Utensils, link: '#' },
-          { name: 'Drinks', icon: Zap, link: '#' },
-          { name: 'Stalls', icon: Store, link: '/vendors' },
-          { name: 'Orders', icon: ShoppingBag, link: '/orders' },
-        ].map((cat) => (
-          <Link href={cat.link} key={cat.name} className="flex flex-col items-center gap-2 group active:scale-95 transition-transform">
-            <div className="w-full aspect-square bg-zinc-900 border border-zinc-800 rounded-3xl flex items-center justify-center group-active:border-orange-500">
-              <cat.icon className="w-6 h-6 text-zinc-600 group-active:text-orange-500" />
+      {/* 2. HERO BANNER */}
+      <div className="px-6 mb-8 mt-2">
+        <div className="bg-gradient-to-r from-orange-900 to-black border border-orange-600/30 rounded-3xl p-6 relative overflow-hidden">
+          <div className="relative z-10 w-2/3">
+            <h2 className="text-2xl font-black italic uppercase tracking-tighter leading-tight mb-2">Get the Fest Combo now</h2>
+            <div className="inline-block bg-orange-500 text-black font-black px-3 py-1 text-sm rounded-lg border border-orange-400">
+              ₦2,500 Only
             </div>
-            <span className="text-[10px] font-black text-zinc-500 uppercase group-active:text-white">{cat.name}</span>
+          </div>
+          <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-orange-600/20 blur-3xl rounded-full"></div>
+        </div>
+      </div>
+
+      {/* 3. THE VISION GRID */}
+      <div className="px-6 mb-10">
+        <div className="grid grid-cols-3 gap-3">
+          <Link href="#explore" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-95 transition-transform">
+            <Utensils className="w-8 h-8 text-orange-500" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-white">Restaurants</span>
           </Link>
-        ))}
-      </section>
-
-      <section className="flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-black text-white italic uppercase tracking-tight">Active <span className="text-orange-500">Kitchens</span></h3>
-          <Link href="/vendors" className="text-xs font-bold text-zinc-600 uppercase">View All</Link>
-        </div>
-
-        <div className="grid gap-3">
-          {activeVendors.length === 0 ? (
-            <div className="text-center py-10 border border-dashed border-zinc-800 rounded-3xl">
-              <Store className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-              <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">No Kitchens Live Yet</p>
+          {[
+            { icon: Store, name: "Shops", color: "text-blue-400" },
+            { icon: Pill, name: "Pharmacies", color: "text-red-400" },
+            { icon: Package, name: "Packages", color: "text-purple-400" },
+            { icon: ShoppingBasket, name: "Markets", color: "text-green-400" },
+            { icon: Sparkles, name: "More", color: "text-pink-400" },
+          ].map((item) => (
+            <div key={item.name} onClick={() => alert("Coming Soon after Auto Fest!")} className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-95 transition-transform opacity-70 cursor-pointer">
+              <item.icon className={`w-8 h-8 ${item.color}`} />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{item.name}</span>
             </div>
-          ) : (
-            activeVendors.map((v) => (
-              <Link href={`/vendors/${v.id}`} key={v.id} className="bg-zinc-900 border border-zinc-800 p-5 rounded-[2.5rem] flex flex-col gap-4 active:scale-95 transition-transform">
-                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20">
-                      <Store className="w-6 h-6 text-orange-500" />
-                    </div>
-                    <div>
-                       <h4 className="text-white font-bold uppercase italic tracking-tight text-lg">{v.businessName}</h4>
-                       <p className="text-[10px] text-zinc-500 font-bold uppercase mt-1 tracking-widest">Stall {v.vendorDisplayId || 'TBD'} • {v.username}</p>
-                    </div>
-                 </div>
-              </Link>
-            ))
-          )}
+          ))}
         </div>
-      </section>
+      </div>
+
+      {/* 4. EXPLORE (Circular Vendors) */}
+      <div id="explore" className="mb-10">
+        <h3 className="px-6 text-xl font-black tracking-tighter mb-4">Explore</h3>
+        <div className="flex overflow-x-auto gap-6 px-6 pb-4 scrollbar-hide">
+          {allVendors.map((v) => (
+            <Link href={`/vendors/${v.id}`} key={v.id} className="flex flex-col items-center gap-2 w-20 flex-shrink-0 active:scale-95 transition-transform">
+              <div className="w-16 h-16 bg-zinc-900 rounded-full border-2 border-zinc-800 flex items-center justify-center overflow-hidden shadow-lg">
+                {v.logoUrl ? <img src={v.logoUrl} alt={v.businessName} className="w-full h-full object-cover" /> : <Store className="w-6 h-6 text-zinc-500" />}
+              </div>
+              <span className="text-[10px] font-bold text-center leading-tight text-zinc-400 line-clamp-2">{v.businessName}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* 5. FEATURED (Product Cards) */}
+      <div>
+        <h3 className="px-6 text-xl font-black tracking-tighter mb-4 flex items-center gap-2">Featured 🌟</h3>
+        <div className="flex overflow-x-auto gap-4 px-6 pb-8 scrollbar-hide">
+          {allProducts.map((p) => (
+            <div key={p.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 w-60 flex-shrink-0 flex flex-col gap-3">
+              <div className="w-full h-32 bg-black rounded-2xl border border-zinc-800 flex items-center justify-center">
+                <Utensils className="w-8 h-8 text-zinc-700" />
+              </div>
+              <div>
+                <h4 className="font-bold text-white text-sm line-clamp-1">{p.name}</h4>
+                <p className="text-orange-500 font-black italic mt-1">₦{p.price}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <BottomNav />
     </div>
   );
 }
