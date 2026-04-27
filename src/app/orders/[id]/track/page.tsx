@@ -4,13 +4,9 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, Bike, CheckCircle2 } from "lucide-react";
-import dynamic from 'next/dynamic';
-
-// Dynamic import for react-qr-code to prevent SSR issues
-const QRCode = dynamic(() => import('react-qr-code'), { ssr: false });
+import TrackerQR from "@/components/TrackerQR";
 
 export default async function OrderTrackerPage({ params }: { params: Promise<{ id: string }> }) {
-  // 1. Next.js 16 requires us to await params
   const { id } = await params;
   
   const order = await db.query.orders.findFirst({
@@ -19,11 +15,9 @@ export default async function OrderTrackerPage({ params }: { params: Promise<{ i
 
   if (!order) notFound();
 
-  // Generate the absolute tracking URL
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://quickserve-iaf.vercel.app";
   const trackingUrl = `${baseUrl}/orders/${order.id}/track`;
 
-  // 2. Added `|| ""` fallback so TS stops complaining about nulls
   const steps = [
     { name: "Payment Confirmed", icon: CheckCircle2, status: order.status !== "pending" ? "completed" : "pending" },
     { name: "Kitchen Preparing", icon: Clock, status: ["preparing", "out_for_delivery", "delivered"].includes(order.status || "") ? "completed" : "pending" },
@@ -45,10 +39,8 @@ export default async function OrderTrackerPage({ params }: { params: Promise<{ i
       <div className="bg-orange-600 p-6 rounded-3xl mb-10 flex flex-col items-center gap-6 shadow-lg shadow-orange-900/20">
         <h2 className="text-[10px] font-black text-white/70 uppercase tracking-widest">Delivery Checklist 📝</h2>
         
-        {/* THE REAL-TIME QR CODE (Scannable tracking link) */}
-        <div className="bg-white p-3 rounded-2xl shadow-xl shadow-orange-950/30">
-          <QRCode value={trackingUrl} size={150} />
-        </div>
+        {/* THE REAL-TIME QR CODE (Client Component) */}
+        <TrackerQR url={trackingUrl} />
         
         <p className="text-zinc-100 text-xs text-center font-bold px-4 leading-tight">
           Show this QR code to the Runner. If camera fails, provide the fallback code:
