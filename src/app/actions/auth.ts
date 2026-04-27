@@ -5,14 +5,15 @@ import { eq, and } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-// 1. ADMIN LOGIN (With Bulletproof Fallback)
+// 1. ADMIN LOGIN (With Anti-Space Protection)
 export async function adminLogin(formData: FormData) {
-  const username = formData.get("username");
-  const password = formData.get("password");
+  // .trim() removes invisible spaces added by mobile keyboards
+  const username = String(formData.get("username")).trim();
+  const password = String(formData.get("password")).trim();
 
-  // It will try to use Vercel's variables first, but fallback to these strings if Vercel fails
-  const validUser = process.env.ADMIN_USERNAME || "Quickserve_admin";
-  const validPass = process.env.ADMIN_PASSWORD || "Ka$kaz@zs/z@z6.";
+  // Hardcoded to completely bypass Vercel environment variable errors for the festival
+  const validUser = "Quickserve_admin";
+  const validPass = "Ka$kaz@zs/z@z6.";
 
   if (username === validUser && password === validPass) {
     const cookieStore = await cookies();
@@ -23,10 +24,10 @@ export async function adminLogin(formData: FormData) {
   throw new Error("Invalid Command Credentials");
 }
 
-// 2. VENDOR LOGIN (Database Check)
+// 2. VENDOR LOGIN (With Correct ID Routing)
 export async function vendorLogin(formData: FormData) {
-  const username = String(formData.get("username"));
-  const password = String(formData.get("password"));
+  const username = String(formData.get("username")).trim();
+  const password = String(formData.get("password")).trim();
 
   const vendor = await db.query.vendors.findFirst({
     where: and(eq(vendors.username, username), eq(vendors.password, password)),
@@ -35,7 +36,8 @@ export async function vendorLogin(formData: FormData) {
   if (vendor) {
     const cookieStore = await cookies();
     cookieStore.set("vendor_session", vendor.id, { path: "/" });
-    redirect("/vendor/dashboard");
+    // FIX: Redirects to their specific ID dashboard so it doesn't 404!
+    redirect(`/vendor/dashboard/${vendor.id}`);
   }
   
   throw new Error("Invalid Vendor Credentials");
