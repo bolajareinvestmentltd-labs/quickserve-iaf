@@ -41,6 +41,9 @@ export const products = pgTable("products", {
 
 // ... Keep existing runners, orders, orderItems tables
 export const runners = pgTable("runners", {
+  username: varchar("username", { length: 255 }).unique(),
+  password: varchar("password", { length: 255 }),
+  email: varchar("email", { length: 255 }),
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   phone: varchar("phone", { length: 20 }).notNull(),

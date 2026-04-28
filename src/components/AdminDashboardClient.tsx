@@ -2,18 +2,23 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createVendor } from "@/app/actions/vendor";
+import { createRunner } from "@/app/actions/runner";
 import { cancelOrder } from "@/app/actions/cancel";
-import { ShieldAlert, Store, Activity, Users, LogOut, UploadCloud, Loader2, Trash2, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, Store, Activity, Users, LogOut, UploadCloud, Loader2, Trash2 } from "lucide-react";
 
 export default function AdminDashboardClient({ initialOrders, initialVendors }: any) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("radar");
   const [cancelling, setCancelling] = useState<string | null>(null);
   
-  // VENDOR ONBOARDING STATE
+  // VENDOR STATE
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [vendorData, setVendorData] = useState({ businessName: "", username: "", password: "", logoUrl: "", vendorTag: "Prime", rating: "4.8", prepTime: "15-20 min", deliveryFee: 200 });
+
+  // RUNNER STATE
+  const [creatingRunner, setCreatingRunner] = useState(false);
+  const [runnerData, setRunnerData] = useState({ name: "", email: "", username: "", password: "", phone: "" });
 
   // Auto-refresh God Mode Radar every 15 seconds
   useEffect(() => {
@@ -62,6 +67,20 @@ export default function AdminDashboardClient({ initialOrders, initialVendors }: 
       alert("Failed to create vendor.");
     }
     setLoading(false);
+  };
+
+  const handleCreateRunner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingRunner(true);
+    const res = await createRunner(runnerData);
+    if (res.success) {
+      alert("Runner added to fleet!");
+      setRunnerData({ name: "", email: "", username: "", password: "", phone: "" });
+      router.refresh();
+    } else {
+      alert(res.error);
+    }
+    setCreatingRunner(false);
   };
 
   return (
@@ -164,12 +183,22 @@ export default function AdminDashboardClient({ initialOrders, initialVendors }: 
         {/* TAB 3: FLEET MANAGEMENT */}
         {/* ======================= */}
         {activeTab === "runners" && (
-           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center shadow-xl shadow-black flex flex-col items-center justify-center gap-4">
-              <div className="w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center">
-                 <Users className="w-8 h-8 text-orange-500" />
-              </div>
-              <h2 className="text-lg font-black text-white italic uppercase tracking-tighter">Runner Fleet Setup</h2>
-              <p className="text-zinc-400 text-sm font-bold">This module is coming in Step 2. We will generate specific login PINs for your riders here.</p>
+           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-xl shadow-black">
+              <h2 className="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                <Users className="w-4 h-4 text-orange-500" /> Onboard New Rider
+              </h2>
+              <form onSubmit={handleCreateRunner} className="flex flex-col gap-4">
+                <input required type="text" placeholder="Full Name" value={runnerData.name} onChange={e => setRunnerData({...runnerData, name: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
+                <input type="email" placeholder="Email Address (Optional)" value={runnerData.email} onChange={e => setRunnerData({...runnerData, email: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
+                <input required type="tel" placeholder="Phone Number" value={runnerData.phone} onChange={e => setRunnerData({...runnerData, phone: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
+                <div className="flex gap-3">
+                  <input required type="text" placeholder="Login Username" value={runnerData.username} onChange={e => setRunnerData({...runnerData, username: e.target.value})} className="w-1/2 bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
+                  <input required type="text" placeholder="Login Password" value={runnerData.password} onChange={e => setRunnerData({...runnerData, password: e.target.value})} className="w-1/2 bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
+                </div>
+                <button type="submit" disabled={creatingRunner} className="w-full bg-orange-600 disabled:bg-zinc-800 text-white font-black py-4 rounded-xl mt-2 active:scale-95 transition-transform uppercase tracking-widest text-sm">
+                  {creatingRunner ? "Adding..." : "Add to Fleet"}
+                </button>
+              </form>
            </div>
         )}
 

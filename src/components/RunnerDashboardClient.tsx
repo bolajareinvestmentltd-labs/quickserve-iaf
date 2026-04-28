@@ -16,7 +16,13 @@ export default function RunnerDashboardClient({ allOrders }: any) {
     return () => clearInterval(interval);
   }, [router]);
 
-  const myRunnerId = "runner_001"; 
+  const [myRunnerId, setMyRunnerId] = useState<string | null>(null);
+  useEffect(() => {
+    const id = localStorage.getItem("quickserve_runner_id");
+    if (!id) router.push("/runner/login");
+    else setMyRunnerId(id);
+  }, [router]);
+  if (!myRunnerId) return <div className="bg-black min-h-screen"></div>; 
 
   const availablePickups = allOrders.filter((o: any) => o.status === "preparing");
   const myActiveMission = allOrders.find((o: any) => o.status === "out_for_delivery" && o.runnerId === myRunnerId);
