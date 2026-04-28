@@ -5,6 +5,10 @@ export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "accep
 export const inventoryStatusEnum = pgEnum("inventory_status", ["available", "out_of_stock", "sold_out"]);
 
 export const vendors = pgTable("vendors", {
+  vendorTag: varchar("vendor_tag", { length: 50 }).default("Prime"),
+  rating: varchar("rating", { length: 10 }).default("4.8"),
+  prepTime: varchar("prep_time", { length: 50 }).default("15-20 min"),
+  deliveryFee: integer("delivery_fee").default(200),
   id: uuid("id").defaultRandom().primaryKey(),
   vendorDisplayId: varchar("vendor_display_id", { length: 20 }).unique(),
   businessName: text("business_name").notNull(),

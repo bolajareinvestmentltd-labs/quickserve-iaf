@@ -1,74 +1,115 @@
-import { db } from "@/db";
-import { orders, products, vendors } from "@/db/schema";
-import { count, eq } from "drizzle-orm";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { LayoutGrid, ShoppingBag, Users, Zap, ArrowRight, Store, Bike, ClipboardList } from "lucide-react";
-import Link from "next/link";
+"use client";
+import { useState } from "react";
+import { createVendor } from "@/app/actions/vendor";
+import { Store, ShieldAlert, Loader2, UploadCloud, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-export default async function AdminHub() {
-  const cookieStore = await cookies();
-  if (!cookieStore.get("admin_session")) redirect("/admin/login");
+export default function AdminDashboard() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  
+  const [vendorData, setVendorData] = useState({
+    businessName: "",
+    username: "",
+    password: "",
+    logoUrl: "",
+    vendorTag: "Prime",
+    rating: "4.8",
+    prepTime: "15-20 min",
+    deliveryFee: 200
+  });
 
-  // Fetch REAL counts from DB
-  const [orderCount] = await db.select({ value: count() }).from(orders);
-  const [productCount] = await db.select({ value: count() }).from(products);
-  const [vendorCount] = await db.select({ value: count() }).from(vendors);
+  // Handle Cloudinary Upload for Vendor Logo
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const stats = [
-    { label: "Total Orders", value: orderCount.value, icon: Zap, color: "text-green-500", bg: "bg-green-500/10" },
-    { label: "Live Products", value: productCount.value, icon: ShoppingBag, color: "text-[#D4AF37]", bg: "bg-[#D4AF37]/10" },
-  ];
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      setVendorData({ ...vendorData, logoUrl: data.secure_url });
+    } catch (error) {
+      alert("Image upload failed. Check your Vercel keys.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleCreateVendor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const res = await createVendor(vendorData);
+    if (res.success) {
+      alert("Vendor created successfully!");
+      setVendorData({ businessName: "", username: "", password: "", logoUrl: "", vendorTag: "Prime", rating: "4.8", prepTime: "15-20 min", deliveryFee: 200 });
+      router.refresh();
+    } else {
+      alert("Failed to create vendor.");
+    }
+    setLoading(false);
+  };
 
   return (
-    <div className="p-6 bg-black min-h-screen text-white pb-32">
-      <header className="mb-10">
-        <h1 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-2">Operations</h1>
-        <h2 className="text-4xl font-black italic uppercase tracking-tighter italic">Command <span className="text-[#D4AF37]">Center</span></h2>
+    <div className="bg-black min-h-screen text-white pb-32">
+      <header className="px-6 py-6 bg-zinc-950 border-b border-zinc-900 flex justify-between items-center sticky top-0 z-40">
+        <h1 className="text-xl font-black italic uppercase tracking-tighter text-white flex items-center gap-2">
+          <ShieldAlert className="w-5 h-5 text-orange-500" /> System <span className="text-orange-500">Admin</span>
+        </h1>
+        <button onClick={() => router.push('/')} className="p-2 bg-red-950/30 text-red-500 rounded-full active:scale-90 transition-transform">
+           <LogOut className="w-5 h-5" />
+        </button>
       </header>
 
-      {/* REAL STAT CARDS */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        {stats.map((s, i) => (
-          <div key={i} className="bg-zinc-900 border border-zinc-800 p-6 rounded-[2.5rem]">
-            <s.icon className={`${s.color} w-5 h-5 mb-4`} />
-            <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">{s.label}</p>
-            <p className="text-3xl font-black italic mt-2">{s.value}</p>
-          </div>
-        ))}
-      </div>
+      <div className="px-6 mt-8">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-xl shadow-black">
+          <h2 className="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+            <Store className="w-4 h-4 text-orange-500" /> Onboard New Storefront
+          </h2>
 
-      {/* NAVIGATION PANEL */}
-      <div className="flex flex-col gap-3">
-        <Link href="/admin/vendors" className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem] flex items-center justify-between group">
-          <div className="flex items-center gap-5">
-            <div className="bg-white/5 p-4 rounded-3xl group-hover:bg-[#D4AF37]/20 transition-colors">
-              <Store className="text-[#D4AF37] w-6 h-6" />
+          <form onSubmit={handleCreateVendor} className="flex flex-col gap-4">
+            {/* Image Upload Area */}
+            <div className="border-2 border-dashed border-zinc-700 rounded-2xl p-6 flex flex-col items-center justify-center text-center relative overflow-hidden bg-zinc-950">
+               {vendorData.logoUrl ? (
+                 <img src={vendorData.logoUrl} alt="Logo" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+               ) : (
+                 <UploadCloud className="w-8 h-8 text-zinc-600 mb-2" />
+               )}
+               <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest relative z-10">
+                 {uploadingImage ? "Uploading..." : vendorData.logoUrl ? "Logo Uploaded" : "Upload Store Logo"}
+               </span>
+               <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" disabled={uploadingImage} />
             </div>
-            <h3 className="text-xl font-black uppercase italic tracking-tighter">Master Inventory</h3>
-          </div>
-          <ArrowRight className="text-zinc-700 w-5 h-5" />
-        </Link>
 
-        <Link href="/admin/compliance" className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem] flex items-center justify-between group">
-          <div className="flex items-center gap-5">
-            <div className="bg-white/5 p-4 rounded-3xl group-hover:bg-blue-500/20 transition-colors">
-              <Bike className="text-blue-500 w-6 h-6" />
+            {/* Core Details */}
+            <input required type="text" placeholder="Business Name" value={vendorData.businessName} onChange={e => setVendorData({...vendorData, businessName: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
+            <div className="flex gap-3">
+              <input required type="text" placeholder="Username" value={vendorData.username} onChange={e => setVendorData({...vendorData, username: e.target.value})} className="w-1/2 bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
+              <input required type="text" placeholder="Password" value={vendorData.password} onChange={e => setVendorData({...vendorData, password: e.target.value})} className="w-1/2 bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
             </div>
-            <h3 className="text-xl font-black uppercase italic tracking-tighter">Rider Logistics</h3>
-          </div>
-          <ArrowRight className="text-zinc-700 w-5 h-5" />
-        </Link>
 
-        <Link href="/admin/orders" className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem] flex items-center justify-between group">
-          <div className="flex items-center gap-5">
-            <div className="bg-white/5 p-4 rounded-3xl group-hover:bg-orange-500/20 transition-colors">
-              <ClipboardList className="text-orange-500 w-6 h-6" />
+            {/* Glovo Badges */}
+            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-2 border-b border-zinc-800 pb-2">Storefront Badges</h3>
+            <div className="grid grid-cols-2 gap-3">
+               <input required type="text" placeholder="Tag (e.g., Prime)" value={vendorData.vendorTag} onChange={e => setVendorData({...vendorData, vendorTag: e.target.value})} className="bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
+               <input required type="text" placeholder="Rating (e.g., 4.8)" value={vendorData.rating} onChange={e => setVendorData({...vendorData, rating: e.target.value})} className="bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
+               <input required type="text" placeholder="Prep Time (15-20 min)" value={vendorData.prepTime} onChange={e => setVendorData({...vendorData, prepTime: e.target.value})} className="bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
+               <input required type="number" placeholder="Delivery Fee" value={vendorData.deliveryFee} onChange={e => setVendorData({...vendorData, deliveryFee: Number(e.target.value)})} className="bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-orange-500" />
             </div>
-            <h3 className="text-xl font-black uppercase italic tracking-tighter">Real-Time Orders</h3>
-          </div>
-          <ArrowRight className="text-zinc-700 w-5 h-5" />
-        </Link>
+
+            <button type="submit" disabled={loading || uploadingImage} className="w-full bg-orange-600 disabled:bg-zinc-800 text-white font-black py-4 rounded-xl mt-4 active:scale-95 transition-transform flex justify-center uppercase tracking-widest text-sm shadow-lg shadow-orange-900/20">
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Authorize Storefront"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
