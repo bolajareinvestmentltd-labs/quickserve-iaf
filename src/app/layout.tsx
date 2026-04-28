@@ -1,3 +1,4 @@
+import { Toaster } from "react-hot-toast";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -19,6 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-black text-white antialiased`}>
         {children}
+        <Toaster position="top-center" toastOptions={{ style: { background: "#18181b", color: "#fff", border: "1px solid #27272a" } }} />
         <BottomNav />
       </body>
     </html>
