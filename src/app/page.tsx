@@ -1,8 +1,10 @@
 import { db } from "@/db";
 import { vendors, products } from "@/db/schema";
 import Link from "next/link";
-import { Utensils, Store, Pill, Package, ShoppingBasket, Sparkles } from "lucide-react";
+import { Store, Star, Clock, Bike } from "lucide-react";
 import DynamicHeader from "@/components/DynamicHeader";
+import CategoryGrid from "@/components/CategoryGrid";
+import BottomNav from "@/components/BottomNav";
 
 export default async function HomePage() {
   const allVendors = await db.query.vendors.findMany();
@@ -10,47 +12,14 @@ export default async function HomePage() {
 
   return (
     <div className="bg-black min-h-screen text-white pb-32">
-      {/* 1. TOP DYNAMIC HEADER */}
+      {/* Dynamic Header with Ticking Clock remains untouched */}
       <DynamicHeader />
 
-      {/* 2. CATCHY PROMO BANNER */}
-      <div className="px-6 mb-8 mt-6">
-        <div className="bg-gradient-to-r from-orange-900 to-black border border-orange-600/30 rounded-3xl p-6 relative overflow-hidden shadow-lg shadow-orange-950/20">
-          <div className="relative z-10 w-2/3">
-            <h2 className="text-2xl font-black italic uppercase tracking-tighter leading-tight mb-2">Get your cravings in <span className="text-orange-500">less than 5 minutes</span></h2>
-            <div className="inline-block bg-orange-500 text-black font-black px-3 py-1 text-sm rounded-lg border border-orange-400">
-              Auto Fest Combo ₦2,500
-            </div>
-          </div>
-          <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-orange-600/20 blur-3xl rounded-full"></div>
-        </div>
-      </div>
+      {/* Replaced Vision Grid with Chowdeck-style Categories */}
+      <CategoryGrid />
 
-      {/* 3. THE VISION GRID (Vision remains closed loop for now) */}
-      <div className="px-6 mb-10">
-        <div className="grid grid-cols-3 gap-3">
-          <Link href="#explore" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-95 transition-transform">
-            <Utensils className="w-8 h-8 text-orange-500" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-white">Restaurants</span>
-          </Link>
-          {[
-            { icon: Store, name: "Shops", color: "text-blue-400" },
-            { icon: Pill, name: "Pharmacies", color: "text-red-400" },
-            { icon: Package, name: "Packages", color: "text-purple-400" },
-            { icon: ShoppingBasket, name: "Markets", color: "text-green-400" },
-            { icon: Sparkles, name: "More", color: "text-pink-400" },
-          ].map((item) => (
-            <Link href="#" key={item.name} className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 active:scale-95 transition-transform opacity-70">
-              <item.icon className={`w-8 h-8 ${item.color}`} />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{item.name}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* 4. EXPLORE (Circular Vendors - Automatic) */}
-      <div id="explore" className="mb-10">
-        <h3 className="px-6 text-xl font-black tracking-tighter mb-4 text-white/90">Explore <span className="text-orange-500">Live</span> Kitchens</h3>
+      <div id="explore" className="mb-10 mt-4">
+        <h3 className="px-6 text-xl font-black tracking-tighter mb-4 text-white/90">Explore <span className="text-orange-500">Live</span> Vendors</h3>
         <div className="flex overflow-x-auto gap-6 px-6 pb-4 scrollbar-hide">
           {allVendors.map((v) => (
             <Link href={`/vendors/${v.id}`} key={v.id} className="flex flex-col items-center gap-2 w-20 flex-shrink-0 active:scale-95 transition-transform">
@@ -63,20 +32,26 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* 5. FEATURED (Product Cards - Automatic) */}
       <div>
-        <h3 className="px-6 text-xl font-black tracking-tighter mb-4 flex items-center gap-2 text-white/90">Trending Plates 🌟</h3>
+        <h3 className="px-6 text-xl font-black tracking-tighter mb-4 flex items-center gap-2 text-white/90">Featured 🌟</h3>
         <div className="flex overflow-x-auto gap-4 px-6 pb-8 scrollbar-hide">
           {allProducts.map((p) => (
-            <div key={p.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 w-60 flex-shrink-0 flex flex-col gap-3 transition-transform active:scale-95">
-              <div className="w-full h-32 bg-black rounded-2xl border border-zinc-800 flex items-center justify-center overflow-hidden">
-                <Utensils className="w-8 h-8 text-zinc-700" />
+            <Link href={`/vendors/${p.vendorId}`} key={p.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 w-64 flex-shrink-0 flex flex-col gap-3 transition-transform active:scale-95">
+              <div className="w-full h-40 bg-black rounded-2xl border border-zinc-800 flex items-center justify-center overflow-hidden relative">
+                 {p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" /> : <div className="text-zinc-700 font-black italic uppercase text-xs tracking-widest">No Image</div>}
               </div>
               <div>
-                <h4 className="font-bold text-white text-sm line-clamp-1">{p.name}</h4>
-                <p className="text-orange-500 font-black italic mt-1">₦{p.price}</p>
+                <h4 className="font-bold text-white text-base line-clamp-1">{p.name}</h4>
+                
+                {/* Professional Glovo-Style Data Badges */}
+                <div className="flex items-center gap-3 mt-3 text-[10px] font-bold text-zinc-400">
+                    <span className="flex items-center gap-1 bg-zinc-800 px-2 py-1 rounded-md"><Bike className="w-3 h-3 text-zinc-400"/> ₦200</span>
+                    <span className="flex items-center gap-1 bg-zinc-800 px-2 py-1 rounded-md"><Clock className="w-3 h-3 text-zinc-400"/> 15-20 min</span>
+                    <span className="flex items-center gap-1 bg-orange-500/10 text-orange-500 px-2 py-1 rounded-md"><Star className="w-3 h-3 fill-current"/> 4.8</span>
+                </div>
+
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
