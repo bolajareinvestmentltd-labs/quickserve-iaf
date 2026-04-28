@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { claimOrder, verifyDeliveryCode } from "@/app/actions/runner";
-import { MapPin, Package, KeyRound, LogOut, CheckCircle2, Loader2, Bike, ScanLine } from "lucide-react";
+import { MapPin, Package, KeyRound, LogOut, Loader2, Bike, ScanLine, Wallet, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function RunnerDashboardClient({ allOrders }: any) {
@@ -11,21 +11,26 @@ export default function RunnerDashboardClient({ allOrders }: any) {
   const [activePinOrder, setActivePinOrder] = useState<any>(null);
   const [pin, setPin] = useState("");
 
-  useEffect(() => {
-    const interval = setInterval(() => router.refresh(), 8000);
-    return () => clearInterval(interval);
-  }, [router]);
-
   const [myRunnerId, setMyRunnerId] = useState<string | null>(null);
   useEffect(() => {
     const id = localStorage.getItem("quickserve_runner_id");
     if (!id) router.push("/runner/login");
     else setMyRunnerId(id);
   }, [router]);
-  if (!myRunnerId) return <div className="bg-black min-h-screen"></div>; 
+
+  useEffect(() => {
+    const interval = setInterval(() => router.refresh(), 8000);
+    return () => clearInterval(interval);
+  }, [router]);
+
+  if (!myRunnerId) return <div className="bg-black min-h-screen"></div>;
 
   const availablePickups = allOrders.filter((o: any) => o.status === "preparing");
   const myActiveMission = allOrders.find((o: any) => o.status === "out_for_delivery" && o.runnerId === myRunnerId);
+  const myCompletedMissions = allOrders.filter((o: any) => o.status === "delivered" && o.runnerId === myRunnerId);
+  
+  // FLAT DELIVERY PAYOUT CALCULATION (₦200 per trip)
+  const totalEarnings = myCompletedMissions.length * 200; 
 
   const handleClaim = async (orderId: string) => {
     if (myActiveMission) return alert("You must complete your active mission first!");
@@ -58,10 +63,25 @@ export default function RunnerDashboardClient({ allOrders }: any) {
           </h1>
           <p className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase mt-1">Live Logistics</p>
         </div>
-        <button onClick={() => router.push('/')} className="p-2 bg-red-950/30 text-red-500 rounded-full active:scale-90 transition-transform"><LogOut className="w-5 h-5" /></button>
+        <button onClick={() => { localStorage.removeItem("quickserve_runner_id"); router.push('/'); }} className="p-2 bg-red-950/30 text-red-500 rounded-full active:scale-90 transition-transform"><LogOut className="w-5 h-5" /></button>
       </header>
 
-      <div className="px-6 mt-8 flex flex-col gap-8">
+      <div className="px-6 mt-6 flex flex-col gap-8">
+        
+        {/* RUNNER WALLET */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-5 shadow-lg shadow-black flex flex-col items-center text-center justify-center">
+            <Wallet className="w-6 h-6 text-green-500 mb-2" />
+            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Today's Earnings</p>
+            <h2 className="text-xl font-black italic text-white">₦{totalEarnings.toLocaleString()}</h2>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-5 shadow-lg shadow-black flex flex-col items-center text-center justify-center">
+            <CheckCircle2 className="w-6 h-6 text-orange-500 mb-2" />
+            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Missions Done</p>
+            <h2 className="text-xl font-black italic text-white">{myCompletedMissions.length}</h2>
+          </div>
+        </div>
+
         {/* ACTIVE MISSION */}
         {myActiveMission && (
           <div>
@@ -106,17 +126,11 @@ export default function RunnerDashboardClient({ allOrders }: any) {
       {activePinOrder && (
         <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-start pt-20 p-6 overflow-y-auto">
            <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-3xl p-6 flex flex-col items-center shadow-2xl">
-              
               <h2 className="text-lg font-black italic uppercase tracking-tighter text-white mb-6">Scan Customer QR</h2>
-              
-              {/* Fake Camera Viewfinder (Ready for a real library integration later) */}
               <div className="w-full aspect-square bg-black border-2 border-dashed border-orange-500/50 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden mb-6">
                  <div className="absolute inset-0 bg-orange-500/5 animate-pulse"></div>
                  <ScanLine className="w-12 h-12 text-orange-500/50 mb-2 animate-bounce" />
                  <p className="text-xs font-bold text-orange-500/50 uppercase tracking-widest">Camera Initializing...</p>
-                 
-                 {/* Decorative scanning line */}
-                 <div className="absolute top-0 left-0 w-full h-1 bg-orange-500/50 shadow-[0_0_15px_#f97316] animate-[scan_2s_ease-in-out_infinite]"></div>
               </div>
 
               <div className="w-full flex items-center gap-4 mb-6">
@@ -131,7 +145,6 @@ export default function RunnerDashboardClient({ allOrders }: any) {
                   {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirm Delivery"}
                 </button>
               </form>
-              
               <button onClick={() => {setActivePinOrder(null); setPin("");}} className="mt-6 text-zinc-500 font-black uppercase tracking-widest text-xs py-2">
                 Cancel
               </button>
