@@ -1,3 +1,4 @@
+import { useRouter } from "next/navigation";
 "use client";
 import { useState, useEffect } from "react";
 import { Star, Clock as ClockIcon, MapPin, Search, Store, Utensils, ShoppingBag, Pill, Package, ShoppingCart, Sparkles } from "lucide-react";
@@ -5,6 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import FloatingCart from "@/components/FloatingCart";
 
 export default function HomeClient({ vendors, products }: any) {
+  const router = useRouter();
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [time, setTime] = useState("");
@@ -95,7 +97,7 @@ export default function HomeClient({ vendors, products }: any) {
           {vendors.map((vendor: any) => (
             <div 
               key={vendor.id} 
-              onClick={() => setSelectedVendor(vendor.id === selectedVendor ? null : vendor.id)}
+              onClick={() => router.push(`/store/${vendor.id}`)}
               className={`min-w-[240px] snap-center bg-zinc-900 border rounded-3xl p-2 cursor-pointer transition-all active:scale-95 ${selectedVendor === vendor.id ? 'border-orange-500 shadow-[0_0_20px_rgba(234,88,12,0.15)]' : 'border-zinc-800'}`}
             >
               <div className="w-full h-32 bg-black rounded-2xl relative overflow-hidden mb-2">
@@ -136,7 +138,8 @@ export default function HomeClient({ vendors, products }: any) {
 
       {/* 4. CART DRAWER */}
       <div className="relative z-50">
-        <FloatingCart />
+         <div className="h-40" />
+      <FloatingCart />
       </div>
     </div>
   );
