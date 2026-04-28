@@ -52,6 +52,7 @@ export const runners = pgTable("runners", {
 });
 
 export const orders = pgTable("orders", {
+  items: text("items"),
   id: uuid("id").defaultRandom().primaryKey(),
   customerName: text("customer_name").notNull(),
   customerPhone: varchar("customer_phone", { length: 20 }).notNull(),
