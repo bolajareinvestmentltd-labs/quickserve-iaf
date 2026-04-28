@@ -5,11 +5,12 @@ import { orders, vendorTickets } from "@/db/schema";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const reference = searchParams.get("reference");
+  // We use the environment variable or a fallback to your live domain
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://quickserve-iaf.vercel.app";
 
-  if (!reference) return NextResponse.redirect(new URL("/", req.url));
+  if (!reference) return NextResponse.redirect(new URL("/", baseUrl));
 
   try {
-    // 1. Ask Paystack if the payment is genuinely successful
     const paystackRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
       headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
     });
@@ -19,62 +20,51 @@ export async function GET(req: Request) {
       const metadata = paystackData.data.metadata;
       const cartItems = JSON.parse(metadata.items || "[]");
 
-      // 2. Prevent duplicate processing
       const existingOrder = await db.query.orders.findFirst({ 
         where: (orders, { eq }) => eq(orders.id, reference) 
       });
       
       if (!existingOrder) {
-        // Generate the secure 4-digit runner PIN
         const deliveryCode = Math.floor(1000 + Math.random() * 9000).toString();
         
-        // 3. CREATE THE PARENT ORDER (For the Customer)
         await db.insert(orders).values({
           id: reference,
           customerName: metadata.customerName || "Guest",
           customerPhone: metadata.customerPhone || "N/A",
           customerZone: metadata.customerZone || "Festival Hub",
-          totalAmount: paystackData.data.amount / 100, // Convert Kobo to Naira
+          totalAmount: paystackData.data.amount / 100,
           deliveryFee: 300,
           customerServiceFee: 50,
           deliveryCode: deliveryCode,
           status: "pending",
-          items: metadata.items, // Keep a raw backup
+          items: metadata.items,
         });
 
-        // 4. THE ESCROW SPLIT: Group items by Vendor
         const vendorGroups = cartItems.reduce((acc: any, item: any) => {
           if (!acc[item.vendorId]) acc[item.vendorId] = [];
           acc[item.vendorId].push(item);
           return acc;
         }, {});
 
-        // 5. CREATE THE CHILD TICKETS (For the Dashboards)
         for (const vendorId of Object.keys(vendorGroups)) {
           const itemsForThisVendor = vendorGroups[vendorId];
-          
-          // Calculate specific subtotal for this specific vendor
           const subtotal = itemsForThisVendor.reduce((sum: number, item: any) => sum + (Number(item.price) * item.quantity), 0);
-          
-          const vendorFee = 50; // QuickServe HQ Cut
-          const payoutAmount = subtotal - vendorFee; // What the vendor actually earns
-
           await db.insert(vendorTickets).values({
             orderId: reference,
             vendorId: vendorId,
             items: JSON.stringify(itemsForThisVendor),
             subtotal: subtotal,
-            vendorFee: vendorFee,
-            payoutAmount: payoutAmount,
+            vendorFee: 50,
+            payoutAmount: subtotal - 50,
             status: "pending",
           });
         }
       }
-      // Redirect customer to their tracking screen
-      return NextResponse.redirect(new URL(`/orders`, req.url));
+      // ABSOLUTE REDIRECT
+      return NextResponse.redirect(`${baseUrl}/orders`);
     }
   } catch (error) {
     console.error("Paystack Error:", error);
   }
-  return NextResponse.redirect(new URL("/", req.url));
+  return NextResponse.redirect(`${baseUrl}/`);
 }
