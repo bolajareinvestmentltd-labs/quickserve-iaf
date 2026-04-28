@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/hooks/useCart";
 import { ArrowLeft, Trash2, Loader2, Info } from "lucide-react";
@@ -8,19 +8,28 @@ import BottomNav from "@/components/BottomNav";
 export default function CheckoutPage() {
   const router = useRouter();
   const cart = useCart() as any;
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ name: "", phone: "", zone: "" });
 
+  // THE FIX: Wait for the phone to take over before rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Show a blank dark screen for a split second to prevent the Hydration Crash
+  if (!mounted) return <div className="bg-black min-h-screen" />;
+
   // 1. EMPTY STATE
-  if (cart.items.length === 0) {
+  if (!cart || !cart.items || cart.items.length === 0) {
     return (
       <div className="bg-black min-h-screen text-white flex flex-col items-center justify-center p-6">
-         <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
+         <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-black/50">
            <Trash2 className="text-zinc-600 w-8 h-8" />
          </div>
-         <h1 className="text-xl font-black uppercase italic mb-2">Basket is Empty</h1>
-         <p className="text-zinc-500 font-medium mb-8 text-center">Looks like you haven't added anything to your order yet.</p>
-         <button onClick={() => router.push('/')} className="bg-orange-600 text-white font-black py-4 px-8 rounded-2xl active:scale-95 transition-transform uppercase tracking-widest text-sm">
+         <h1 className="text-2xl font-black uppercase italic mb-2">Basket is Empty</h1>
+         <p className="text-zinc-500 font-medium mb-8 text-center px-6">Looks like you haven't added anything to your order yet.</p>
+         <button onClick={() => router.push('/')} className="bg-orange-600 text-white font-black py-4 px-10 rounded-2xl active:scale-95 transition-transform uppercase tracking-widest text-sm shadow-lg shadow-orange-900/20">
            Start Browsing
          </button>
          <BottomNav />
@@ -36,7 +45,7 @@ export default function CheckoutPage() {
     return acc;
   }, {});
 
-  const subtotal = cart.total;
+  const subtotal = cart.total || 0;
   const serviceFee = 50;
   const deliveryFee = 200;
   const grandTotal = subtotal + serviceFee + deliveryFee;
@@ -81,7 +90,7 @@ export default function CheckoutPage() {
           </h1>
         </div>
         {/* CLEAR CART BUTTON */}
-        <button onClick={() => cart.clearCart()} className="text-red-500 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest bg-red-500/10 px-3 py-1.5 rounded-lg active:scale-90 transition-transform">
+        <button onClick={() => cart.clearCart()} className="text-red-500 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest bg-red-500/10 px-3 py-1.5 rounded-lg active:scale-90 transition-transform border border-red-500/20">
           <Trash2 className="w-3.5 h-3.5" /> Clear
         </button>
       </header>
