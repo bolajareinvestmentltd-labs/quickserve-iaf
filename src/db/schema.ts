@@ -1,98 +1,80 @@
-import { pgTable, text, varchar, integer, boolean, timestamp, uuid, pgEnum } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, text, varchar, integer, boolean, timestamp, uuid } from "drizzle-orm/pg-core";
 
-export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "accepted", "preparing", "out_for_delivery", "delivered", "cancelled"]);
-export const inventoryStatusEnum = pgEnum("inventory_status", ["available", "out_of_stock", "sold_out"]);
-
+// 1. STOREFRONTS
 export const vendors = pgTable("vendors", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  businessName: varchar("business_name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  username: varchar("username", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  logoUrl: text("logo_url"),
   vendorTag: varchar("vendor_tag", { length: 50 }).default("Prime"),
   rating: varchar("rating", { length: 10 }).default("4.8"),
   prepTime: varchar("prep_time", { length: 50 }).default("15-20 min"),
   deliveryFee: integer("delivery_fee").default(200),
-  id: uuid("id").defaultRandom().primaryKey(),
-  vendorDisplayId: varchar("vendor_display_id", { length: 20 }).unique(),
-  businessName: text("business_name").notNull(),
-  cuisineType: text("cuisine_type"), 
-  logoUrl: text("logo_url"),
-  email: text("email").unique().notNull(),
-  username: text("username").unique().notNull(),
-  password: text("password").notNull(),
-  isSlotActive: boolean("is_slot_active").default(false).notNull(),
-  walletBalance: integer("wallet_balance").default(0).notNull(),
-  totalDeliveries: integer("total_deliveries").default(0).notNull(),
-  lastSeen: timestamp("last_seen").defaultNow(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
+// 2. MENUS
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
-  vendorId: uuid("vendor_id").references(() => vendors.id).notNull(),
-  name: text("name").notNull(),
-  description: text("description"),
+  vendorId: text("vendor_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
   price: integer("price").notNull(),
-  category: varchar("category", { length: 50 }).default("meals"),
-  promoBadge: varchar("promo_badge", { length: 50 }),
-  unit: varchar("unit", { length: 20 }).default("piece"),
+  category: varchar("category", { length: 100 }).default("Meals"),
+  description: text("description"),
   imageUrl: text("image_url"),
-  inventoryStatus: inventoryStatusEnum("inventory_status").default("available"),
-  isAvailable: boolean("is_available").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isAvailable: boolean("is_available").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-// ... Keep existing runners, orders, orderItems tables
+// 3. FLEET MANAGEMENT
 export const runners = pgTable("runners", {
-  username: varchar("username", { length: 255 }).unique(),
-  password: varchar("password", { length: 255 }),
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  username: varchar("username", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }).notNull(),
   email: varchar("email", { length: 255 }),
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull(),
-  phone: varchar("phone", { length: 20 }).notNull(),
-  pin: varchar("pin", { length: 4 }).default("6675"),
-  isOnline: boolean("is_online").default(false).notNull(),
-  walletBalance: integer("wallet_balance").default(0).notNull(),
-  totalDeliveries: integer("total_deliveries").default(0).notNull(),
-  lastSeen: timestamp("last_seen").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
+// 4. THE PARENT ORDER (Customer Facing)
 export const orders = pgTable("orders", {
-  items: text("items"),
-  id: uuid("id").defaultRandom().primaryKey(),
-  customerName: text("customer_name").notNull(),
-  customerPhone: varchar("customer_phone", { length: 20 }).notNull(),
-  customerZone: text("customer_zone").notNull(),
+  id: varchar("id", { length: 255 }).primaryKey(), // Paystack Reference
+  customerName: varchar("customer_name", { length: 255 }).notNull(),
+  customerPhone: varchar("customer_phone", { length: 50 }).notNull(),
+  customerZone: varchar("customer_zone", { length: 255 }),
   totalAmount: integer("total_amount").notNull(),
-  status: orderStatusEnum("status").default("pending"),
-  rating: integer("rating"),
-  feedback: text("feedback"),
+  deliveryFee: integer("delivery_fee").default(300), // Runner Cut
+  customerServiceFee: integer("customer_service_fee").default(50), // Admin Cut
+  runnerId: text("runner_id"),
   deliveryCode: varchar("delivery_code", { length: 10 }),
-  isSettled: boolean("is_settled").default(false),
-  runnerId: uuid("runner_id").references(() => runners.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  status: varchar("status", { length: 50 }).default("pending"),
+  items: text("items"), // Legacy raw cart backup
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const orderItems = pgTable("order_items", {
+// 5. THE CHILD TICKETS (Vendor Facing)
+export const vendorTickets = pgTable("vendor_tickets", {
   id: uuid("id").defaultRandom().primaryKey(),
-  orderId: uuid("order_id").references(() => orders.id).notNull(),
-  productId: uuid("product_id").references(() => products.id).notNull(),
-  vendorId: uuid("vendor_id").references(() => vendors.id).notNull(),
-  quantity: integer("quantity").notNull(),
+  orderId: varchar("order_id", { length: 255 }).notNull(),
+  vendorId: text("vendor_id").notNull(),
+  items: text("items").notNull(), // Exact JSON string of items for this kitchen
+  subtotal: integer("subtotal").notNull(),
+  vendorFee: integer("vendor_fee").default(50), // Admin Cut
+  payoutAmount: integer("payout_amount").notNull(), // True Vendor Wallet Value
+  status: varchar("status", { length: 50 }).default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const vendorRelations = relations(vendors, ({ many }) => ({
-  products: many(products),
-}));
-
-export const productRelations = relations(products, ({ one }) => ({
-  vendor: one(vendors, { fields: [products.vendorId], references: [vendors.id] }),
-}));
-
-export const orderRelations = relations(orders, ({ many, one }) => ({
-  items: many(orderItems),
-  runner: one(runners, { fields: [orders.runnerId], references: [runners.id] })
-}));
-
-export const orderItemRelations = relations(orderItems, ({ one }) => ({
-  order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }),
-  product: one(products, { fields: [orderItems.productId], references: [products.id] }),
-  vendor: one(vendors, { fields: [orderItems.vendorId], references: [vendors.id] })
-}));
+// 6. CUSTOMER FEEDBACK
+export const ratings = pgTable("ratings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: varchar("order_id", { length: 255 }).notNull(),
+  vendorId: text("vendor_id"),
+  runnerId: text("runner_id"),
+  rating: integer("rating").notNull(),
+  feedback: text("feedback"),
+  createdAt: timestamp("created_at").defaultNow(),
+});

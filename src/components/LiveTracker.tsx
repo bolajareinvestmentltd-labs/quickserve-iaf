@@ -44,7 +44,7 @@ export default function LiveTracker({ order, steps, trackingUrl }: any) {
   async function handleRatingSubmit() {
     if (rating === 0) return;
     setSubmitting(true);
-    await submitRating(order.id, rating, feedback);
+    await submitRating({ orderId: order.id, rating, feedback });
     setShowRating(false);
     setSubmitting(false);
   }

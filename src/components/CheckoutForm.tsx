@@ -18,7 +18,7 @@ export default function CheckoutForm() {
     setLoading(true);
     try {
       const data = Object.fromEntries(formData.entries());
-      await initializePayment(data, cart, cartTotal);
+      await initializePayment({ ...data, cart, cartTotal });
     } catch (err) { setLoading(false); }
   }
 

@@ -34,7 +34,7 @@ export default async function OrdersPage() {
                 </div>
                 <div>
                   <h4 className="text-white font-bold uppercase italic tracking-tight">{order.customerZone}</h4>
-                  <p className="text-[9px] text-zinc-500 font-bold uppercase mt-1">₦{order.totalAmount.toLocaleString()} • {new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                  <p className="text-[9px] text-zinc-500 font-bold uppercase mt-1">₦{order.totalAmount.toLocaleString()} • {new Date(order.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
