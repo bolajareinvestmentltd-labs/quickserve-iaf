@@ -1,47 +1,59 @@
-"use client";
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface CartItem {
   id: string;
   name: string;
   price: number;
-  vendorId: string;
   quantity: number;
+  vendorId: string;
+  vendorName: string;
+  imageUrl?: string;
 }
 
 interface CartStore {
   items: CartItem[];
-  addItem: (item: CartItem) => void;
+  addItem: (item: any, quantity?: number) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
   getTotal: () => number;
+  total: number; 
 }
 
 export const useCart = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
-      addItem: (newItem) => {
-        const currentItems = get().items;
-        const existingItem = currentItems.find((i) => i.id === newItem.id);
-        if (existingItem) {
-          set({
-            items: currentItems.map((i) =>
-              i.id === newItem.id ? { ...i, quantity: i.quantity + 1 } : i
-            ),
-          });
-        } else {
-          set({ items: [...currentItems, { ...newItem, quantity: 1 }] });
-        }
+      // DEFAULT TO 1 IF NO QUANTITY IS PROVIDED
+      addItem: (product, quantity = 1) => {
+        set((state) => {
+          const existingItem = state.items.find((i) => i.id === product.id);
+          if (existingItem) {
+            return {
+              items: state.items.map((i) =>
+                i.id === product.id ? { ...i, quantity: i.quantity + quantity } : i
+              ),
+            };
+          }
+          return { items: [...state.items, { ...product, quantity }] };
+        });
       },
-      removeItem: (id) => set({ items: get().items.filter((i) => i.id !== id) }),
+      removeItem: (id) => {
+        set((state) => ({
+          items: state.items.filter((i) => i.id !== id),
+        }));
+      },
       clearCart: () => set({ items: [] }),
+      // RESTORED GETTOTAL FOR OLDER COMPONENTS
       getTotal: () => {
-        const subtotal = get().items.reduce((acc, i) => acc + i.price * i.quantity, 0);
-        return subtotal > 0 ? subtotal + 50 : 0; // Adding your ₦50 Platform Fee
+        return get().items.reduce((total, item) => total + (item.price * item.quantity), 0);
+      },
+      get total() {
+        return get().items.reduce((total, item) => total + (item.price * item.quantity), 0);
       },
     }),
-    { name: "quickserve-cart" }
+    {
+      name: 'quickserve-cart-storage',
+    }
   )
 );
