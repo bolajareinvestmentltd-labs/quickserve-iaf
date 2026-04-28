@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Star, X, QrCode, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Star, X, QrCode, Loader2, CheckCircle2, AlertTriangle, Bike } from "lucide-react";
 import TrackerQR from "@/components/TrackerQR";
 import { submitRating } from "@/app/actions/rating";
 import { cancelOrder } from "@/app/actions/cancel";
@@ -14,14 +14,27 @@ export default function LiveTracker({ order, steps, trackingUrl }: any) {
   const [feedback, setFeedback] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [distance, setDistance] = useState(100); // Radar distance simulation
 
-  // REAL-TIME PULSE
+  // REAL-TIME PULSE & RADAR SIMULATION
   useEffect(() => {
     if (order.status !== "delivered" && order.status !== "cancelled") {
       const interval = setInterval(() => {
         router.refresh();
       }, 8000);
-      return () => clearInterval(interval);
+      
+      // Radar shrinking logic
+      let distInterval: NodeJS.Timeout;
+      if (order.status === "out_for_delivery") {
+        distInterval = setInterval(() => {
+           setDistance(prev => Math.max(12, prev - 8)); // Shrinks down to a close radius
+        }, 3000);
+      }
+
+      return () => {
+        clearInterval(interval);
+        if (distInterval) clearInterval(distInterval);
+      };
     } else if (order.status === "delivered" && !order.rating) {
       setShowQR(false);
       setShowRating(true);
@@ -44,7 +57,6 @@ export default function LiveTracker({ order, steps, trackingUrl }: any) {
     }
   }
 
-  // If order is cancelled, show a clean cancelled state
   if (order.status === "cancelled") {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
@@ -52,18 +64,29 @@ export default function LiveTracker({ order, steps, trackingUrl }: any) {
           <AlertTriangle className="w-10 h-10 text-red-500" />
         </div>
         <h2 className="text-2xl font-black italic uppercase tracking-tighter text-white mt-4">Order Cancelled</h2>
-        <p className="text-sm text-zinc-400 font-medium">This order has been voided and moved to history.</p>
       </div>
     );
   }
 
   return (
     <>
-      {/* 1. OUT FOR DELIVERY ACTIONS */}
+      {/* 1. OUT FOR DELIVERY DYNAMIC RADAR */}
       {order.status === "out_for_delivery" && (
-        <div className="mb-10 bg-orange-900/20 border border-orange-600/30 p-4 rounded-3xl flex flex-col items-center text-center gap-3 shadow-lg shadow-orange-900/10">
-          <p className="text-orange-500 font-bold text-sm">Runner is arriving soon!</p>
-          <button onClick={() => setShowQR(true)} className="w-full bg-orange-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
+        <div className="mb-10 bg-zinc-900 border border-orange-600/30 p-8 rounded-3xl flex flex-col items-center text-center shadow-[0_0_30px_rgba(234,88,12,0.1)] relative overflow-hidden">
+          
+          {/* Pulsing Radar UI */}
+          <div className="relative w-32 h-32 flex items-center justify-center mb-6">
+             <div className="absolute inset-0 bg-orange-500/20 rounded-full animate-ping duration-1000"></div>
+             <div className="absolute inset-4 bg-orange-500/40 rounded-full animate-pulse"></div>
+             <div className="relative z-10 bg-orange-600 w-14 h-14 rounded-full flex items-center justify-center border-2 border-white shadow-[0_0_20px_rgba(234,88,12,0.8)]">
+               <Bike className="w-7 h-7 text-white" />
+             </div>
+          </div>
+          
+          <h3 className="text-xl font-black text-white italic uppercase tracking-tighter mb-1">Runner Approaching</h3>
+          <p className="text-orange-500 font-bold text-xs uppercase tracking-widest mb-6">Proximity: {distance}m away</p>
+
+          <button onClick={() => setShowQR(true)} className="w-full bg-orange-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform z-10 relative">
             <QrCode className="w-5 h-5" /> SHOW DELIVERY CODE
           </button>
         </div>
@@ -86,30 +109,28 @@ export default function LiveTracker({ order, steps, trackingUrl }: any) {
         ))}
       </div>
 
-      {/* 3. CANCEL ORDER BUTTON (Only if not delivered) */}
       {order.status !== "delivered" && (
         <button onClick={handleCancelOrder} disabled={cancelling} className="w-full bg-red-950/20 border border-red-900/50 text-red-500 font-bold py-4 rounded-2xl mt-4 active:scale-95 transition-transform flex items-center justify-center gap-2">
           {cancelling ? <Loader2 className="w-5 h-5 animate-spin" /> : "CANCEL ORDER"}
         </button>
       )}
 
-      {/* 4. QR CODE MODAL */}
+      {/* QR & RATING MODALS (Preserved Logic) */}
       {showQR && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-6">
-          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-3xl p-6 flex flex-col items-center relative">
+          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-3xl p-6 flex flex-col items-center relative shadow-[0_0_40px_rgba(234,88,12,0.2)]">
             <button onClick={() => setShowQR(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X className="w-6 h-6" /></button>
-            <h2 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-6">Scan to Receive</h2>
+            <h2 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-6 mt-4">Customer Delivery Code</h2>
             <TrackerQR url={trackingUrl} />
-            <div className="flex gap-2 mt-6">
+            <div className="flex gap-3 mt-8 mb-4">
               {order.deliveryCode?.split('').map((char: string, i: number) => (
-                <div key={i} className="w-12 h-14 bg-black border border-zinc-800 rounded-xl flex items-center justify-center font-black text-2xl text-orange-500">{char}</div>
+                <div key={i} className="w-14 h-16 bg-black border border-zinc-800 rounded-2xl flex items-center justify-center font-black text-3xl text-orange-500 shadow-inner">{char}</div>
               ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* 5. RATING MODAL */}
       {showRating && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-3xl p-6 flex flex-col items-center relative shadow-2xl shadow-orange-900/20">

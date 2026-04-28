@@ -1,42 +1,58 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { orders, orderItems } from "@/db/schema";
+import { orders } from "@/db/schema";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { customerName, customerPhone, customerZone, items, totalAmount } = body;
+    const { items, totalAmount, customerDetails } = await req.json();
 
-    // 1. Validate payload
-    if (!items || items.length === 0) {
-      return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
+    // 1. PAYSTACK EMAIL LOGIC
+    const dummyEmail = customerDetails.email || `${customerDetails.phone.replace(/\s+/g, '')}@quickserve.local`;
+
+    // 2. INITIALIZE PAYSTACK
+    const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: dummyEmail,
+        amount: totalAmount * 100, // Kobo conversion
+        callback_url: `https://quickserve-iaf.vercel.app/orders/verify`, 
+        metadata: {
+          customer_name: customerDetails.name,
+          whatsapp: customerDetails.phone,
+          zone: customerDetails.zone,
+        },
+      }),
+    });
+
+    const paystackData = await paystackRes.json();
+
+    if (!paystackData.status) {
+      console.error("Paystack API Error:", paystackData.message);
+      return NextResponse.json({ error: paystackData.message }, { status: 400 });
     }
 
-    // 2. Create the master Order record
-    const [newOrder] = await db.insert(orders).values({
-      customerName,
-      customerPhone,
-      customerZone,
-      totalAmount,
-      status: "pending", // Vendor will see this on their dashboard
-    }).returning({ id: orders.id });
+    // 3. SECURELY LOG THE ORDER IN THE DATABASE
+    const deliveryCode = Math.floor(1000 + Math.random() * 9000).toString(); 
+    
+    await db.insert(orders).values({
+      id: paystackData.data.reference, 
+      customerName: customerDetails.name,
+      customerPhone: customerDetails.phone,
+      customerZone: customerDetails.zone,
+      totalAmount: totalAmount, // FIX: Added missing totalAmount
+      status: "pending",        // FIX: Changed from "waiting" to "pending"
+      deliveryCode: deliveryCode,
+    });
 
-    // 3. Prepare the individual order items for bulk insertion
-    const itemsToInsert = items.map((item: any) => ({
-      orderId: newOrder.id,
-      productId: item.id,
-      vendorId: item.vendorId, // Crucial for routing the order to the correct vendor's dashboard
-      quantity: item.quantity,
-    }));
-
-    // 4. Bulk insert the items
-    await db.insert(orderItems).values(itemsToInsert);
-
-    // Return success to the frontend
-    return NextResponse.json({ success: true, orderId: newOrder.id });
+    // 4. RETURN THE LINK TO THE FRONTEND
+    return NextResponse.json({ authorizationUrl: paystackData.data.authorization_url });
 
   } catch (error) {
-    console.error("Checkout Engine Error:", error);
-    return NextResponse.json({ error: "Failed to process order" }, { status: 500 });
+    console.error("Checkout Crash:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

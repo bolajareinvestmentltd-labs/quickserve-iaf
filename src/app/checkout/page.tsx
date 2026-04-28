@@ -10,7 +10,7 @@ export default function CheckoutPage() {
   const cart = useCart() as any;
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: "", phone: "", zone: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", zone: "" });
 
   // THE FIX: Wait for the phone to take over before rendering
   useEffect(() => {
@@ -136,6 +136,7 @@ export default function CheckoutPage() {
         {/* CHECKOUT FORM & PAY BUTTON */}
         <form onSubmit={handleCheckout} className="flex flex-col gap-3">
           <input required type="text" placeholder="Full Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3.5 text-sm font-bold text-white outline-none focus:border-orange-500 transition-colors" />
+          <input type="email" placeholder="Email Address (Optional - For Receipt)" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3.5 text-sm font-bold text-white outline-none focus:border-orange-500 transition-colors" />
           <div className="flex gap-3">
             <input required type="tel" placeholder="WhatsApp No." value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-1/2 bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3.5 text-sm font-bold text-white outline-none focus:border-orange-500 transition-colors" />
             <input required type="text" placeholder="Zone / Stall" value={formData.zone} onChange={e => setFormData({...formData, zone: e.target.value})} className="w-1/2 bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3.5 text-sm font-bold text-white outline-none focus:border-orange-500 transition-colors" />
