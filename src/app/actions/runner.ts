@@ -1,38 +1,29 @@
 "use server";
-
 import { db } from "@/db";
-import { orders, runners } from "@/db/schema";
-import { eq, sql, and, isNull } from "drizzle-orm";
+import { orders } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function acceptOrder(orderId: string, runnerId: string) {
-  try {
-    // 1. Double check the order is still available (Concurrency check)
-    const order = await db.query.orders.findFirst({
-      where: and(eq(orders.id, orderId), isNull(orders.runnerId))
-    });
+export async function claimOrder(orderId: string, runnerId: string) {
+  await db.update(orders)
+    .set({ status: "out_for_delivery", runnerId })
+    .where(eq(orders.id, orderId));
+    
+  revalidatePath("/runner/dashboard");
+}
 
-    if (!order) throw new Error("Order already taken by another runner!");
+export async function verifyDeliveryCode(orderId: string, code: string) {
+  const order = await db.query.orders.findFirst({
+    where: eq(orders.id, orderId)
+  });
+  
+  if (!order) return { success: false, error: "Order not found" };
+  if (order.deliveryCode !== code) return { success: false, error: "Invalid PIN. Check customer's screen." };
 
-    // 2. Assign Runner to Order & Update Status
-    await db.update(orders)
-      .set({ 
-        runnerId: runnerId,
-        status: "accepted" 
-      })
-      .where(eq(orders.id, orderId));
-
-    // 3. Move the ₦300 to the Runner's wallet immediately
-    await db.update(runners)
-      .set({ 
-        walletBalance: sql`${runners.walletBalance} + 300`,
-        totalDeliveries: sql`${runners.totalDeliveries} + 1`
-      })
-      .where(eq(runners.id, runnerId));
-
-    revalidatePath(`/runner/dashboard/${runnerId}`);
-    return { success: true };
-  } catch (error) {
-    return { success: false, message: "Could not claim order." };
-  }
+  await db.update(orders)
+    .set({ status: "delivered" })
+    .where(eq(orders.id, orderId));
+    
+  revalidatePath("/runner/dashboard");
+  return { success: true };
 }
