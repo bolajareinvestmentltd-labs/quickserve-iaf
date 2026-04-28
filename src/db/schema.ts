@@ -54,6 +54,8 @@ export const orders = pgTable("orders", {
   customerZone: text("customer_zone").notNull(),
   totalAmount: integer("total_amount").notNull(),
   status: orderStatusEnum("status").default("pending"),
+  rating: integer("rating"),
+  feedback: text("feedback"),
   deliveryCode: varchar("delivery_code", { length: 10 }),
   isSettled: boolean("is_settled").default(false),
   runnerId: uuid("runner_id").references(() => runners.id),
