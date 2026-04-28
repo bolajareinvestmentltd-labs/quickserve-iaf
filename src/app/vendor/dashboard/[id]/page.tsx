@@ -1,25 +1,28 @@
 import { db } from "@/db";
-import { vendors, products } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { vendors, products, orders } from "@/db/schema";
+import { eq, desc, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import VendorDashboardClient from "@/components/VendorDashboardClient";
 
 export default async function VendorDashboardPage({ params }: { params: Promise<{ id: string }> }) {
-  // Await the asynchronous params per Next.js 16 requirements
   const { id } = await params;
 
-  // 1. Authenticate / Fetch Vendor
+  // 1. Authenticate Vendor
   const vendor = await db.query.vendors.findFirst({
     where: eq(vendors.id, id),
   });
 
   if (!vendor) notFound();
 
-  // 2. Fetch all products belonging to this vendor
+  // 2. Fetch Menu
   const vendorProducts = await db.query.products.findMany({
     where: eq(products.vendorId, id),
-    orderBy: [desc(products.createdAt)], // Shows newest items first
   });
 
-  return <VendorDashboardClient vendor={vendor} products={vendorProducts} />;
+  // 3. Fetch Active Orders
+  const activeOrders = await db.query.orders.findMany({
+    where: inArray(orders.status, ["pending", "preparing", "out_for_delivery"]),
+  });
+
+  return <VendorDashboardClient vendor={vendor} products={vendorProducts} allOrders={activeOrders} />;
 }
