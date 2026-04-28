@@ -45,7 +45,7 @@ export default function CheckoutPage() {
     return acc;
   }, {});
 
-  const subtotal = cart.total || 0;
+  const subtotal = cart.items.reduce((sum: any, item: any) => sum + (item.price * item.quantity), 0);
   const serviceFee = 50;
   const deliveryFee = 200;
   const grandTotal = subtotal + serviceFee + deliveryFee;
