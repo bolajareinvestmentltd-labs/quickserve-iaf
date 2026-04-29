@@ -15,7 +15,7 @@ export default function FloatingCart() {
             <ShoppingBag className="text-white w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] font-black text-orange-200 uppercase tracking-widest leading-none">Your Plate</p>
+            <p className="text-[10px] font-black text-orange-200 uppercase tracking-widest leading-none">Your Basket</p>
             <p className="text-white font-black text-lg leading-none mt-1">{items.length} Items</p>
           </div>
         </div>
