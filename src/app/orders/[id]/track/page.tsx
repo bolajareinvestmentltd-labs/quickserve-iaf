@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { orders } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import LiveTracker from "@/components/LiveTracker";
-import { cookies } from "next/headers";
+import ClientCookieSetter from "./ClientCookieSetter";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +20,10 @@ export default async function TrackOrderPage({ params }: { params: Promise<{ id:
     );
   }
 
-  // Bypasses Paystack cross-site blocks by dropping the cookie natively
-  const cookieStore = await cookies();
-  cookieStore.set("active_order", id, { maxAge: 60 * 60 * 24 * 7, path: "/" });
-
-  return <LiveTracker order={order} />;
+  return (
+    <>
+      <ClientCookieSetter orderId={id} />
+      <LiveTracker order={order} />
+    </>
+  );
 }
