@@ -1,3 +1,4 @@
+import ActiveOrderBanner from "@/components/ActiveOrderBanner";
 "use client";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -28,6 +29,7 @@ export default function HomeClient({ vendors, products }: any) {
 
   return (
     <div className="bg-black min-h-screen text-white pb-32 font-sans relative">
+      <ActiveOrderBanner />
       
       {/* 1. HEADER & HERO SECTION */}
       <div className="px-4 pt-6 pb-4">

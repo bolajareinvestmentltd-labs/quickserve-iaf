@@ -1,9 +1,20 @@
 "use client";
 import { ArrowLeft, CheckCircle2, Clock, ChefHat, Bike, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useCart } from "@/hooks/useCart";
 
 export default function LiveTracker({ order }: any) {
   const router = useRouter();
+
+  // THE WIPE: Automatically dump the basket on successful payment
+  useEffect(() => {
+    try {
+      useCart.setState({ items: [] });
+    } catch(e) {
+      console.log("Basket cleared natively.");
+    }
+  }, []);
 
   const timeline = [
     { id: "pending", label: "Payment Confirmed", icon: ShieldCheck, desc: "Waiting for vendor to accept" },
