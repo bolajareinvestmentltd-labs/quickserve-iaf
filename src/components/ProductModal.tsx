@@ -23,7 +23,7 @@ export default function ProductModal({ product, vendorName, onClose }: any) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
       {/* Centered Card (Mobile First) */}
       <div className="w-full max-w-sm bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl border border-zinc-800 animate-in zoom-in-95 duration-200">
         <div className="relative h-48 w-full bg-black">
