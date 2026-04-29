@@ -5,10 +5,12 @@ import { orders, vendorTickets } from "@/db/schema";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const reference = searchParams.get("reference");
-  // We use the environment variable or a fallback to your live domain
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://quickserve-iaf.vercel.app";
+  
+  // Clean base URL to aggressively prevent Next.js double-slash 404s
+  let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://quickserve-iaf.vercel.app";
+  baseUrl = baseUrl.replace(/\/$/, "");
 
-  if (!reference) return NextResponse.redirect(new URL("/", baseUrl));
+  if (!reference) return NextResponse.redirect(`${baseUrl}/`);
 
   try {
     const paystackRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
@@ -60,7 +62,6 @@ export async function GET(req: Request) {
           });
         }
       }
-      // ABSOLUTE REDIRECT
       return NextResponse.redirect(`${baseUrl}/orders`);
     }
   } catch (error) {
