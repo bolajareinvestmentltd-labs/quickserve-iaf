@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Plus, Minus, ShoppingBasket } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "react-hot-toast";
@@ -8,14 +8,6 @@ export default function ProductModal({ product, vendorName, onClose }: any) {
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
 
-  // 🔒 SCROLL LOCK MAGIC: Freezes the background when modal is open
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
-
   const handleAdd = () => {
     addItem({ ...product, vendorName }, quantity);
     toast.success(`Added ${quantity}x ${product.name} to basket`);
@@ -23,9 +15,15 @@ export default function ProductModal({ product, vendorName, onClose }: any) {
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
-      {/* Centered Card (Mobile First) */}
-      <div className="w-full max-w-sm bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl border border-zinc-800 animate-in zoom-in-95 duration-200">
+    <div 
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      {/* The onClick propagation stop prevents the modal from closing if they tap inside the card */}
+      <div 
+        className="w-full max-w-sm bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl border border-zinc-800 animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="relative h-48 w-full bg-black">
           {product.imageUrl ? (
             <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
@@ -60,7 +58,7 @@ export default function ProductModal({ product, vendorName, onClose }: any) {
           </div>
 
           <button onClick={handleAdd} className="w-full bg-orange-600 text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-orange-900/20 text-sm uppercase tracking-tight">
-            <ShoppingBasket className="w-5 h-5" /> Add to Basket — ₦{(product.price * quantity).toLocaleString()}
+            <ShoppingBasket className="w-5 h-5" /> Add to Basket — ₦{(Number(product.price) * quantity).toLocaleString()}
           </button>
         </div>
       </div>
