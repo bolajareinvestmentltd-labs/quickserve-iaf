@@ -19,7 +19,7 @@ export default function DashboardClient({ vendor }: { vendor: any }) {
 
   useEffect(() => {
     fetchTickets();
-    const interval = setInterval(fetchTickets, 5000);
+    const interval = setInterval(fetchTickets, 5000); // Auto-polls every 5 seconds
     return () => clearInterval(interval);
   }, []);
 
