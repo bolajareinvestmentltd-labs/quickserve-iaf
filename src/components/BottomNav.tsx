@@ -6,6 +6,7 @@ import { useCart } from "@/hooks/useCart";
 
 export default function BottomNav() {
   const pathname = usePathname();
+  if (pathname.startsWith("/vendor")) return null;
   const { items } = useCart();
   const cartCount = items.reduce((sum: number, item: any) => sum + Number(item.quantity), 0);
 
