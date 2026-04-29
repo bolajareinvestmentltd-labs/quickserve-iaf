@@ -1,5 +1,5 @@
-import ActiveOrderBanner from "@/components/ActiveOrderBanner";
 "use client";
+import ActiveOrderBanner from "@/components/ActiveOrderBanner";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Star, Clock as ClockIcon, MapPin, Search, Store, Utensils, ShoppingBag, Pill, Package, ShoppingCart, Sparkles } from "lucide-react";
@@ -51,9 +51,6 @@ export default function HomeClient({ vendors, products }: any) {
           <h2 className="text-3xl font-black italic text-white uppercase leading-none tracking-tighter relative z-10 mb-4">
             GET YOUR<br/>CRAVINGS IN<br/><span className="text-orange-500">LESS THAN 5<br/>MINUTES</span>
           </h2>
-          <button className="bg-orange-600 text-black font-black uppercase tracking-widest text-[10px] px-4 py-2 rounded-xl relative z-10">
-            Auto Fest Combo<br/><span className="text-lg">₦2,500</span>
-          </button>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-6">
@@ -65,22 +62,11 @@ export default function HomeClient({ vendors, products }: any) {
             { icon: ShoppingCart, label: "MARKETS", color: "text-green-400" },
             { icon: Sparkles, label: "MORE", color: "text-pink-400" }
           ].map((cat, i) => (
-            <div key={i} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform">
+            <div key={i} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform cursor-pointer">
               <cat.icon className={`w-6 h-6 ${cat.color}`} />
               <span className="text-[8px] font-black tracking-widest uppercase text-zinc-400">{cat.label}</span>
             </div>
           ))}
-        </div>
-
-        <div className="relative mb-2">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
-          <input 
-            type="text" 
-            placeholder="Search for food or drinks..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-white outline-none focus:border-orange-500 transition-colors"
-          />
         </div>
       </div>
 
@@ -103,10 +89,6 @@ export default function HomeClient({ vendors, products }: any) {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-zinc-700 bg-zinc-950"><Store className="w-8 h-8 opacity-50" /></div>
                 )}
-                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg flex items-center gap-1 border border-zinc-700/50">
-                  <Star className="w-3 h-3 text-orange-500 fill-orange-500" />
-                  <span className="text-[10px] font-black text-white">{vendor.rating || "4.8"}</span>
-                </div>
               </div>
               <div className="px-2 pb-1">
                 <h3 className="text-sm font-black text-white truncate mb-1">{vendor.businessName}</h3>
