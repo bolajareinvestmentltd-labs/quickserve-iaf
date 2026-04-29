@@ -6,7 +6,6 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const reference = searchParams.get("reference");
   
-  // Clean base URL to aggressively prevent Next.js double-slash 404s
   let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://quickserve-iaf.vercel.app";
   baseUrl = baseUrl.replace(/\/$/, "");
 
@@ -62,7 +61,11 @@ export async function GET(req: Request) {
           });
         }
       }
-      return NextResponse.redirect(`${baseUrl}/orders`);
+      
+      // THE MAGIC: Drop the silent token on their phone and redirect
+      const response = NextResponse.redirect(`${baseUrl}/orders`);
+      response.cookies.set("active_order", reference, { maxAge: 60 * 60 * 24 * 7, path: "/" });
+      return response;
     }
   } catch (error) {
     console.error("Paystack Error:", error);
