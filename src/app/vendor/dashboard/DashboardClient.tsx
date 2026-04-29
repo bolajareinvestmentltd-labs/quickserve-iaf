@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChefHat, Check, LogOut, MapPin, Package, BarChart3, Settings, LayoutDashboard, Lock, Plus, Trash2 } from "lucide-react";
+import { ChefHat, Check, LogOut, MapPin, Package, BarChart3, Settings, LayoutDashboard, Lock, Plus, Trash2, Tag, Image as ImageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -11,21 +11,18 @@ export default function DashboardClient({ vendor }: { vendor: any }) {
   const [activeTab, setActiveTab] = useState("orders");
   const router = useRouter();
 
-  // New Product State
-  const [newProduct, setNewProduct] = useState({ name: "", price: "", description: "" });
+  const [newProduct, setNewProduct] = useState({ name: "", price: "", description: "", tagInput: "", badge: "" });
   const [isAdding, setIsAdding] = useState(false);
 
   const fetchData = async () => {
     try {
-      // Fetch Orders
       const ticketsRes = await fetch(`/api/vendor/tickets?vendorId=${vendor.id}`);
       if (ticketsRes.ok) setTickets(await ticketsRes.json());
       
-      // Fetch Inventory
       const productsRes = await fetch(`/api/vendor/products?vendorId=${vendor.id}`);
       if (productsRes.ok) setMenuItems(await productsRes.json());
     } catch (e) {
-      console.error("Failed to fetch dashboard data");
+      console.error("Dashboard failed to fetch live data.");
     } finally {
       setLoading(false);
     }
@@ -54,16 +51,20 @@ export default function DashboardClient({ vendor }: { vendor: any }) {
     if (!newProduct.name || !newProduct.price) return toast.error("Name and price are required");
     
     setIsAdding(true);
+    
+    // Process comma-separated tags into an array
+    const tags = newProduct.tagInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+
     const res = await fetch("/api/vendor/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...newProduct, vendorId: vendor.id })
+      body: JSON.stringify({ ...newProduct, tags, vendorId: vendor.id })
     });
 
     if (res.ok) {
       toast.success("Item added to menu!");
-      setNewProduct({ name: "", price: "", description: "" });
-      fetchData(); // Refresh inventory
+      setNewProduct({ name: "", price: "", description: "", tagInput: "", badge: "" });
+      fetchData();
     } else {
       toast.error("Failed to add item");
     }
@@ -80,7 +81,7 @@ export default function DashboardClient({ vendor }: { vendor: any }) {
   const tabs = [
     { id: "orders", icon: LayoutDashboard, label: "Live KDS" },
     { id: "inventory", icon: Package, label: "Inventory" },
-    { id: "analytics", icon: BarChart3, label: "Analytics" },
+    { id: "wallet", icon: BarChart3, label: "Virtual Wallet" }, // Updated Tab
     { id: "settings", icon: Settings, label: "Settings" }
   ];
 
@@ -92,10 +93,8 @@ export default function DashboardClient({ vendor }: { vendor: any }) {
         <div>
           <h1 className="text-xl font-black italic uppercase tracking-tighter text-white">{vendor.businessName}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <div className={`w-2 h-2 rounded-full ${activeTab === 'orders' ? 'bg-green-500 animate-pulse' : 'bg-zinc-500'}`}></div>
-            <span className="text-[10px] text-zinc-400 font-bold tracking-widest uppercase">
-              {activeTab === 'orders' ? 'Live Kitchen Feed' : activeTab === 'inventory' ? 'Menu Manager' : 'System Locked'}
-            </span>
+            <div className="w-2 h-2 rounded-full bg-green-500animate-pulse"></div>
+            <span className="text-[10px] text-zinc-400 font-bold tracking-widest uppercase">System Live</span>
           </div>
         </div>
         <button onClick={handleLogout} className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center active:scale-90 transition-transform">
@@ -103,7 +102,7 @@ export default function DashboardClient({ vendor }: { vendor: any }) {
         </button>
       </header>
 
-      {/* FULL SCALE NAVIGATION */}
+      {/* NAVIGATION */}
       <div className="flex overflow-x-auto gap-3 mb-6 pb-2" style={{ scrollbarWidth: 'none' }}>
         {tabs.map(tab => (
           <button 
@@ -117,7 +116,7 @@ export default function DashboardClient({ vendor }: { vendor: any }) {
       </div>
 
       {/* TAB: LOCKED MODULES */}
-      {(activeTab === "analytics" || activeTab === "settings") && (
+      {(activeTab === "settings") && (
         <div className="text-center py-20 bg-zinc-900/30 border border-dashed border-zinc-800 rounded-3xl mt-4 flex flex-col items-center animate-in fade-in duration-300">
           <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
              <Lock className="w-6 h-6 text-zinc-600" />
@@ -129,61 +128,84 @@ export default function DashboardClient({ vendor }: { vendor: any }) {
         </div>
       )}
 
+      {/* TAB: WALLET SHELL (MVP) */}
+      {activeTab === "wallet" && (
+        <div className="animate-in fade-in duration-300 space-y-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-900/30 via-transparent to-transparent opacity-60"></div>
+            <div className="relative z-10">
+              <h2 className="text-3xl font-black text-white italic tabular-nums leading-tight mb-1">₦0.00</h2>
+              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Available Balance</p>
+              <div className="flex items-center gap-2 mt-4">
+                <span className="text-[10px] font-black text-green-400 uppercase bg-green-500/10 px-2 py-1 rounded-full">Escrow Active</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-5 shadow-xl flex items-center justify-between">
+             <div>
+               <h3 className="font-black text-lg text-white">Pending Order Split</h3>
+               <p className="text-zinc-500 font-bold text-xs">Awaiting payout on food readiness.</p>
+             </div>
+             <BarChart3 className="w-8 h-8 text-orange-500" />
+          </div>
+        </div>
+      )}
+
       {/* TAB: INVENTORY (MENU MANAGER) */}
       {activeTab === "inventory" && (
         <div className="animate-in fade-in duration-300 space-y-6">
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-5 shadow-xl">
             <h2 className="font-black text-white uppercase tracking-tight mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-orange-500" /> Add New Item</h2>
             <form onSubmit={handleAddProduct} className="space-y-3">
-              <input 
-                type="text" 
-                placeholder="Item Name (e.g., Spicy Chicken Wings)" 
-                value={newProduct.name}
-                onChange={e => setNewProduct({...newProduct, name: e.target.value})}
-                className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white font-bold outline-none focus:border-orange-500 transition-colors"
-              />
+              
+              {/* Product Form upgraded with tags/badges */}
+              <input type="text" placeholder="Item Name (e.g., Spicy Chicken Wings)" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white font-bold outline-none focus:border-orange-500" />
               <div className="flex gap-3">
                 <div className="relative w-1/3">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 font-black">₦</span>
-                  <input 
-                    type="number" 
-                    placeholder="Price" 
-                    value={newProduct.price}
-                    onChange={e => setNewProduct({...newProduct, price: e.target.value})}
-                    className="w-full bg-black border border-zinc-800 rounded-xl p-3 pl-8 text-sm text-white font-bold outline-none focus:border-orange-500 transition-colors"
-                  />
+                  <input type="number" placeholder="Price" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl p-3 pl-8 text-sm text-white font-bold outline-none focus:border-orange-500" />
                 </div>
-                <input 
-                  type="text" 
-                  placeholder="Short Description (Optional)" 
-                  value={newProduct.description}
-                  onChange={e => setNewProduct({...newProduct, description: e.target.value})}
-                  className="w-2/3 bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white font-bold outline-none focus:border-orange-500 transition-colors"
-                />
+                <input type="text" placeholder="Short Description" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="w-2/3 bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white font-bold outline-none focus:border-orange-500" />
               </div>
-              <button disabled={isAdding} type="submit" className="w-full bg-orange-600 text-white font-black py-3 rounded-xl uppercase tracking-widest text-xs mt-2 active:scale-95 transition-transform">
-                {isAdding ? "Adding..." : "Publish to Menu"}
-              </button>
+              
+              {/* Image, Tags, Badges */}
+              <div className="bg-black border border-zinc-800 rounded-xl p-4 flex flex-col gap-3">
+                 <div className="flex items-center gap-4">
+                     <ImageIcon className="w-5 h-5 text-orange-500" />
+                     <button type="button" className="text-[10px] text-zinc-500 font-black uppercase tracking-widest border-b border-dashed border-zinc-700">Image Upload [Locked for Image Update phase]</button>
+                 </div>
+                 <div className="flex items-center gap-4">
+                     <Tag className="w-5 h-5 text-zinc-600" />
+                     <input type="text" placeholder="Menu Tags (comma separated, e.g., Desert, Sweet, BestSeller)" value={newProduct.tagInput} onChange={e => setNewProduct({...newProduct, tagInput: e.target.value})} className="w-full bg-transparent text-sm text-zinc-300 font-bold outline-none placeholder:text-zinc-600" />
+                 </div>
+                 <div className="flex items-center gap-4">
+                     <Plus className="w-5 h-5 text-green-600" />
+                     <input type="text" placeholder="Badge (e.g., NEW, HOT)" value={newProduct.badge} onChange={e => setNewProduct({...newProduct, badge: e.target.value})} className="w-full bg-transparent text-sm text-zinc-300 font-bold outline-none placeholder:text-zinc-600" />
+                 </div>
+              </div>
+
+              <button disabled={isAdding} type="submit" className="w-full bg-orange-600 text-white font-black py-3 rounded-xl uppercase tracking-widest text-xs mt-2 active:scale-95 transition-transform"> publish </button>
             </form>
           </div>
 
           <div>
             <h2 className="font-black text-zinc-500 uppercase tracking-widest text-xs mb-3 px-2">Live Menu ({menuItems.length})</h2>
             <div className="space-y-3">
-              {menuItems.length === 0 ? (
-                <div className="text-center py-10 bg-zinc-900/50 border border-dashed border-zinc-800 rounded-3xl">
-                  <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">No items added yet</p>
-                </div>
-              ) : (
-                menuItems.map(item => (
-                  <div key={item.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex justify-between items-center">
-                    <div>
-                      <h3 className="font-black text-white text-sm">{item.name}</h3>
-                      <p className="text-orange-500 font-bold text-xs">₦{item.price}</p>
+              {menuItems.map(item => (
+                <div key={item.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex justify-between items-center relative overflow-hidden">
+                   {item.badge && <span className="absolute top-2 right-2 text-[8px] font-black text-black bg-green-500 px-2 py-0.5 rounded-full uppercase tracking-widest">{item.badge}</span>}
+                  <div>
+                    <h3 className="font-black text-white text-sm">{item.name}</h3>
+                    <p className="text-orange-500 font-bold text-xs">₦{item.price}</p>
+                    <div className="flex items-center gap-1.5 mt-2">
+                        {item.tags?.filter((tag: string) => tag && tag.length > 0).map((tag: string, index: number) => (
+                           <span key={index} className="text-[9px] text-zinc-500 font-bold bg-black px-2.5 py-1 rounded-full uppercase tracking-wider">{tag}</span>
+                        ))}
                     </div>
                   </div>
-                ))
-              )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
